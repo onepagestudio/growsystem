@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>成長複盤系統 · 日週月季年（數字版）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#141414; --paper:#ffffff; --paper-2:#f4f4f2; --line:#dcdcd8;
+    --grey:#8b8b85; --grey-dim:#c9c9c3; --red:#b3261e; --shadow:0 30px 60px -24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--paper-2); color:var(--black); font-family:'Noto Sans TC', sans-serif; min-height:100vh; }
+  .app{ display:grid; grid-template-columns:230px 1fr; min-height:100vh; }
+  .sidebar{ background:var(--black); color:#e9e9e6; padding:26px 14px 30px 18px; position:sticky; top:0; height:100vh; overflow-y:auto;}
+  .brand-mark{ font-family:'Noto Serif TC', serif; font-weight:900; font-size:16px; margin:0 0 2px; line-height:1.3;}
+  .brand-sub{ font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:.14em; color:#8f8f89; margin:0 0 22px; }
+  .navgroup-title{ font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#6c6c67; margin:14px 0 6px 4px; }
+  .navbtn{ display:flex; align-items:baseline; gap:9px; width:100%; background:none; border:none; cursor:pointer; text-align:left; color:#c7c7c2; font-size:13.5px; padding:9px 10px; border-radius:2px; margin-bottom:3px; }
+  .navbtn .tag{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:#6c6c67; min-width:14px; }
+  .navbtn:hover{ background:#1e1e1e; color:#fff; }
+  .navbtn.active{ background:#fff; color:#111; font-weight:700; }
+  .navbtn.active .tag{ color:#777; }
+
+  .main{ padding:34px 40px 80px; }
+  .page{ background:var(--paper); border:1px solid var(--line); border-radius:2px; box-shadow:var(--shadow); padding:40px 46px 50px; max-width:1040px; margin:0 auto; }
+  .eyebrow{ font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.16em; color:var(--grey); text-transform:uppercase; margin:0 0 6px; }
+  h1.page-title{ font-family:'Noto Serif TC', serif; font-weight:900; font-size:26px; margin:0 0 8px; }
+  .page-q{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--red); margin:0 0 14px; }
+  .page-desc{ color:#4a4a46; font-size:13.5px; line-height:1.75; max-width:700px; margin:0; }
+  h2.sec-title{ font-family:'Noto Serif TC', serif; font-weight:700; font-size:15px; margin:26px 0 12px; display:flex; align-items:center; gap:10px; }
+  h2.sec-title::after{ content:""; flex:1; height:1px; background:var(--line); }
+
+  .callout{ background:var(--paper-2); border-left:3px solid var(--black); padding:11px 15px; font-size:12.6px; line-height:1.8; white-space:pre-line; margin:10px 0 16px; font-family:'IBM Plex Mono', monospace; }
+  .callout.warn{ border-left-color:var(--red); }
+  .callout b{ font-weight:700; } .callout .r{ color:var(--red); font-weight:700; }
+
+  table{ width:100%; border-collapse:collapse; margin:6px 0 8px; font-size:12.6px; }
+  th{ text-align:left; font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--grey); text-transform:uppercase; font-weight:600; border-bottom:1.5px solid var(--black); padding:6px 7px; }
+  td{ padding:6px 7px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  input[type=text], input[type=number], textarea, select{ width:100%; border:1px solid var(--line); background:#fff; border-radius:2px; padding:6px 7px; font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--black); }
+  input[type=text].wide, textarea{ font-family:'Noto Sans TC', sans-serif; font-size:13px; }
+  textarea{ resize:vertical; min-height:40px; }
+  .num-cell{ font-family:'IBM Plex Mono', monospace; text-align:right; }
+
+  .metricrow{ border:1px solid var(--line); border-radius:3px; padding:14px 16px; margin-bottom:12px; }
+  .metricrow .mtop{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .metricrow h4{ font-family:'Noto Serif TC', serif; font-size:14.5px; margin:0; }
+  .metricrow .formula{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--grey); }
+  .metricgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px 16px; align-items:end; }
+  .metricgrid .field label{ display:block; font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--grey); margin-bottom:4px; }
+  .resultbox{ text-align:center; }
+  .resultbox .rv{ font-family:'IBM Plex Mono', monospace; font-size:19px; font-weight:700; }
+  .badge{ display:inline-block; font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; margin-top:4px; }
+  .badge.pass{ background:var(--black); color:#fff; }
+  .badge.fail{ background:var(--red); color:#fff; }
+  .badge.na{ border:1px solid var(--grey-dim); color:var(--grey); }
+
+  .qgrid{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:12px; margin:14px 0 10px; }
+  .qbox{ border:1.5px solid var(--black); border-radius:3px; padding:12px 14px; min-height:120px; }
+  .qbox h5{ font-family:'Noto Serif TC', serif; font-size:13px; margin:0 0 3px; }
+  .qbox .qsub{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--grey); margin-bottom:8px; }
+  .qbox ul{ list-style:none; margin:0; padding:0; }
+  .qbox li{ display:flex; justify-content:space-between; gap:6px; font-size:12.5px; padding:4px 0; border-bottom:1px dashed var(--line); }
+  .qbox li button{ background:none; border:none; color:var(--grey); cursor:pointer; font-size:11px; flex-shrink:0; }
+  .qbox li button:hover{ color:var(--red); }
+  .taskadd{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .taskadd input[type=text]{ flex:1; min-width:160px; }
+  .taskadd label{ display:flex; align-items:center; gap:5px; font-size:12px; font-family:'IBM Plex Mono', monospace; white-space:nowrap; }
+  .taskadd button{ background:var(--black); color:#fff; border:none; padding:6px 14px; border-radius:2px; font-size:12px; cursor:pointer; }
+
+  .checklist{ list-style:none; margin:0 0 14px; padding:0; }
+  .checklist li{ display:flex; gap:11px; align-items:flex-start; padding:9px 0; border-bottom:1px dashed var(--line); font-size:13.5px; }
+  .checklist input[type=checkbox]{ width:17px; height:17px; margin-top:1px; accent-color:#111; flex-shrink:0; }
+
+  table.history{ width:100%; border-collapse:collapse; font-size:12px; margin-top:6px; }
+  table.history th{ text-align:left; font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--grey); border-bottom:1px solid var(--black); padding:5px 6px; }
+  table.history td{ padding:5px 6px; border-bottom:1px solid var(--line); font-family:'IBM Plex Mono', monospace; }
+  .dot{ display:inline-block; width:9px; height:9px; border-radius:50%; }
+  .dot.on{ background:var(--black); } .dot.off{ background:var(--grey-dim); }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:16px 24px; }
+  .grid4{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px 16px; }
+  .field label{ display:block; font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--grey); margin-bottom:4px; }
+
+  .footbar{ display:flex; align-items:center; justify-content:space-between; margin-top:26px; padding-top:14px; border-top:1px solid var(--line); }
+  .savemsg{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--grey); }
+  .resetbtn{ background:none; border:1px solid var(--red); color:var(--red); border-radius:2px; padding:6px 12px; font-size:11.5px; cursor:pointer; }
+
+  @media (max-width:900px){
+    .app{ grid-template-columns:1fr; } .sidebar{ position:relative; height:auto; }
+    .main{ padding:18px 12px 60px; } .page{ padding:22px 18px 30px; }
+    .metricgrid,.grid2,.grid4,.qgrid{ grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar" id="sidebar"></nav>
+  <main class="main"><div class="page" id="page"></div></main>
+</div>
+
+<script>
+const BRANDS = ["DUMO","穿戴甲課程","靈感研究室會員制","一頁品牌服務"];
+const NAV = [
+  {group:"設定", items:[{id:"thresholds", tag:"⚙", label:"通用成長門檻"}]},
+  {group:"複盤層級", items:[
+    {id:"day", tag:"日", label:"日：目標達成"},
+    {id:"week", tag:"週", label:"週：週成長率"},
+    {id:"month", tag:"月", label:"月：月成長體檢"},
+    {id:"quarter", tag:"季", label:"季：結構性成長"},
+    {id:"year", tag:"年", label:"年：長期成長"},
+  ]},
+];
+
+let state = {};
+const STORAGE_KEY = "growth-cascade-numeric-v1";
+
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+function last7Keys(){ const a=[]; for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); a.push(d.toISOString().slice(0,10)); } return a; }
+
+function seedState(){
+  return {
+    thresholds: {
+      revGrowth: 10,        // 營收成長率健康門檻 %
+      marginDrop: 3,        // 毛利率允許下滑上限（百分點）
+      ltvCac: 3,             // LTV:CAC 健康門檻
+      cashSafety: 3,         // 現金安全月數健康門檻
+      retention: 50,         // 回購／續約率健康門檻 %
+      concentration: 60,     // 單一品牌營收占比上限 %
+    },
+    dailyLog: {},
+    dayTasks: [],
+    day: {dailyTarget:"", dailyActual:""},
+    weekTasks: [],
+    week: {lastRev:"", curRev:"", cash:"", fixed:""},
+    month: {lastRev:"", curRev:"", lastMargin:"", curMargin:"", profitGrowth:"", revenueGrowth2:"", cash2:"", fixed2:"", lastRetention:"", curRetention:""},
+    quarter: {ltv:"", cac:"", lastCust:"", curCust:"", brandRev: BRANDS.map(b=>({name:b, revenue:""})), lastRetentionQ:"", curRetentionQ:""},
+    year: {lastRevY:"", curRevY:"", lastDep:"", curDep:"", lastReferral:"", curReferral:""},
+  };
+}
+
+async function loadState(){
+  try{
+    const r = await window.storage.get(STORAGE_KEY, false);
+    if(r && r.value){ state = JSON.parse(r.value); return; }
+  }catch(e){}
+  state = seedState();
+}
+let saveTimer=null;
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  const el = document.getElementById("savemsg");
+  if(el) el.textContent = "儲存中…";
+  saveTimer = setTimeout(async ()=>{
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+      if(el) el.textContent = "已自動儲存 · " + new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+    }catch(e){ if(el) el.textContent = "儲存失敗，請確認網路"; }
+  }, 500);
+}
+function esc(v){ return (v===undefined||v===null)?'':String(v).replace(/"/g,'&quot;'); }
+function round1(n){ return Math.round(n*10)/10; }
+function num(v){ const n=parseFloat(v); return isNaN(n)?null:n; }
+function growthRate(cur,last){ const c=num(cur), l=num(last); if(c===null||l===null||l===0) return null; return (c-l)/l*100; }
+
+function metricRow(title, formula, resultLabel, resultVal, resultUnit, pass, fields){
+  const badge = pass===null ? `<span class="badge na">尚未輸入</span>` : (pass ? `<span class="badge pass">達標</span>` : `<span class="badge fail">未達標</span>`);
+  return `<div class="metricrow">
+    <div class="mtop"><h4>${title}</h4><span class="formula">${formula}</span></div>
+    <div class="metricgrid">
+      ${fields}
+      <div class="field resultbox"><label>${resultLabel}</label><div class="rv">${resultVal===null?'—':round1(resultVal)+resultUnit}</div>${badge}</div>
+    </div>
+  </div>`;
+}
+
+/* ============ THRESHOLDS ============ */
+function panelThresholds(){
+  const t = state.thresholds;
+  const f=(label,key,unit)=>`<div class="field"><label>${label}</label>
+    <div style="display:flex;align-items:center;gap:6px;"><input type="number" data-th="${key}" value="${esc(t[key])}"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--grey);">${unit}</span></div></div>`;
+  return `
+  <div class="eyebrow">設定</div>
+  <h1 class="page-title">通用成長門檻</h1>
+  <p class="page-desc">這些是一般公司常用的健康門檻，已經幫你設好預設值，全部可以自己改。之後每一層的成長判斷都會拿這裡的數字當基準。</p>
+  <div class="grid2">
+    ${f("營收成長率健康門檻","revGrowth","%")}
+    ${f("毛利率允許下滑上限","marginDrop","百分點")}
+    ${f("LTV : CAC 健康門檻","ltvCac","倍")}
+    ${f("現金安全月數健康門檻","cashSafety","個月")}
+    ${f("回購／續約率健康門檻","retention","%")}
+    ${f("單一品牌營收占比上限","concentration","%")}
+  </div>
+  <div class="callout">參考依據：<b>營收成長率>10%</b>是多數中小企業常用的健康成長基準；<b>LTV:CAC≥3</b>是行銷／訂閱制產業最常見的通用經驗值；<b>現金安全月數≥3個月</b>是普遍建議的最低安全庫存；<b>單一品牌占比不超過60%</b>是避免過度集中單一風險的粗略防線。這些都是經驗值，不是絕對標準，你比較清楚自己產業的話可以直接改。</div>`;
+}
+
+/* ============ DAY ============ */
+function panelDay(){
+  const tk = todayKey();
+  if(!state.dailyLog[tk]) state.dailyLog[tk] = {a:false,b:false,c:false};
+  const d = state.dailyLog[tk];
+  const day = state.day;
+  const target = num(day.dailyTarget), actual = num(day.dailyActual);
+  const rate = (target && actual!==null) ? (actual/target*100) : null;
+  const pass = rate===null ? null : rate>=100;
+
+  const keys = last7Keys();
+  let hist = `<table class="history"><thead><tr><th>日期</th><th>跟進名單</th><th>處理逾期</th><th>本週重點</th></tr></thead><tbody>`;
+  keys.forEach(k=>{
+    const e = state.dailyLog[k] || {a:false,b:false,c:false};
+    hist += `<tr><td>${k===tk?k+'（今天）':k}</td>
+      <td><span class="dot ${e.a?'on':'off'}"></span></td>
+      <td><span class="dot ${e.b?'on':'off'}"></span></td>
+      <td><span class="dot ${e.c?'on':'off'}"></span></td></tr>`;
+  });
+  hist += `</tbody></table>`;
+
+  return `
+  <div class="eyebrow">日 · ${tk}</div>
+  <h1 class="page-title">日：目標達成率</h1>
+  <p class="page-q">今天回答：今天的營收目標有沒有達成？</p>
+  <p class="page-desc">日層級不算成長率（樣本太小沒有意義），只看達成率——每天穩定達成 100%，一週加總起來的成長率才有基礎。</p>
+
+  ${metricRow("今日營收達成率", "實際 ÷ 目標 × 100%", "達成率", rate, "%", pass, `
+    <div class="field"><label>今日目標營收</label><input type="number" data-day="dailyTarget" value="${esc(day.dailyTarget)}"></div>
+    <div class="field"><label>今日實際營收</label><input type="number" data-day="dailyActual" value="${esc(day.dailyActual)}"></div>
+  `)}
+
+  <ul class="checklist">
+    <li><input type="checkbox" data-daychk="a" ${d.a?'checked':''}>跟進未成交名單／已到手但還沒收款的訂單</li>
+    <li><input type="checkbox" data-daychk="b" ${d.b?'checked':''}>處理今天最急的逾期交付或客訴</li>
+    <li><input type="checkbox" data-daychk="c" ${d.c?'checked':''}>做一件本週三大重點裡的事</li>
+  </ul>
+
+  <h2 class="sec-title">最近 7 天</h2>
+  ${hist}
+
+  <h2 class="sec-title">今日任務四象限</h2>
+  ${renderQuadrant("dayTasks")}
+  <div class="callout">分類依據：<b>緊急</b>＝今天不做明天就會出事／錯過機會；<b>困難</b>＝需要專注、不能被打斷才做得完的事。左上先做，左下順手先清掉，右上排時間深度處理，右下能交辦就交辦、不行就最後做。</div>`;
+}
+
+/* ============ QUADRANT COMPONENT ============ */
+function renderQuadrant(key){
+  const tasks = state[key];
+  const q = {uh:[], ue:[], nh:[], ne:[]}; // urgent-hard, urgent-easy, notUrgent-hard, notUrgent-easy
+  tasks.forEach((t,i)=>{
+    const item = {...t, idx:i};
+    if(t.urgent && t.hard) q.uh.push(item);
+    else if(t.urgent && !t.hard) q.ue.push(item);
+    else if(!t.urgent && t.hard) q.nh.push(item);
+    else q.ne.push(item);
+  });
+  const box=(title,sub,list)=>`<div class="qbox"><h5>${title}</h5><div class="qsub">${sub}</div><ul>
+    ${list.length? list.map(t=>`<li>${esc(t.text)}<button data-deltask="${key}||${t.idx}">刪除</button></li>`).join('') : '<li style="color:var(--grey-dim);border:none;">—</li>'}
+  </ul></div>`;
+  return `
+  <div class="taskadd">
+    <input type="text" class="wide" id="newtask-${key}" placeholder="輸入一件事">
+    <label><input type="checkbox" id="urgent-${key}" checked>緊急</label>
+    <label><input type="checkbox" id="hard-${key}" checked>困難</label>
+    <button data-addtask="${key}">加入</button>
+  </div>
+  <div class="qgrid">
+    ${box("緊急＋困難","立刻做", q.uh)}
+    ${box("不緊急＋困難","排時間深度做", q.nh)}
+    ${box("緊急＋不困難","快速做完", q.ue)}
+    ${box("不緊急＋不困難","交辦或批次處理", q.ne)}
+  </div>`;
+}
+
+/* ============ WEEK ============ */
+function panelWeek(){
+  const w = state.week, t = state.thresholds;
+  const rate = growthRate(w.curRev, w.lastRev);
+  const passRate = rate===null ? null : rate >= t.revGrowth;
+  const cash = num(w.cash), fixed = num(w.fixed);
+  const safety = (cash!==null && fixed) ? cash/fixed : null;
+  const passSafety = safety===null ? null : safety >= t.cashSafety;
+
+  return `
+  <div class="eyebrow">週</div>
+  <h1 class="page-title">週：週成長率</h1>
+  <p class="page-q">這週回答：跟上週比，有沒有成長？現金撐不撐得住？</p>
+  <p class="page-desc">四個經營項目的細部指標請用「週月複盤」工具，這裡只放兩個週層級最關鍵的數字。</p>
+
+  ${metricRow("週營收成長率", "(本週營收－上週營收) ÷ 上週營收 × 100%　門檻 ≥ "+t.revGrowth+"%", "成長率", rate, "%", passRate, `
+    <div class="field"><label>上週營收</label><input type="number" data-week="lastRev" value="${esc(w.lastRev)}"></div>
+    <div class="field"><label>本週營收</label><input type="number" data-week="curRev" value="${esc(w.curRev)}"></div>
+  `)}
+
+  ${metricRow("現金安全月數", "現金餘額 ÷ 每月固定支出　門檻 ≥ "+t.cashSafety+" 個月", "安全月數", safety, " 個月", passSafety, `
+    <div class="field"><label>現金餘額</label><input type="number" data-week="cash" value="${esc(w.cash)}"></div>
+    <div class="field"><label>每月固定支出</label><input type="number" data-week="fixed" value="${esc(w.fixed)}"></div>
+  `)}
+
+  <h2 class="sec-title">本週任務四象限</h2>
+  ${renderQuadrant("weekTasks")}`;
+}
+
+/* ============ MONTH ============ */
+function panelMonth(){
+  const m = state.month, t = state.thresholds;
+  const revRate = growthRate(m.curRev, m.lastRev);
+  const passRev = revRate===null?null:revRate>=t.revGrowth;
+
+  const lm=num(m.lastMargin), cm=num(m.curMargin);
+  const marginDelta = (lm!==null&&cm!==null) ? (cm-lm) : null;
+  const passMargin = marginDelta===null?null:marginDelta >= -t.marginDrop;
+
+  const pg=num(m.profitGrowth), rg=num(m.revenueGrowth2);
+  const passPG = (pg!==null&&rg!==null) ? (pg>=rg) : null;
+
+  const cash2=num(m.cash2), fixed2=num(m.fixed2);
+  const safety2 = (cash2!==null&&fixed2) ? cash2/fixed2 : null;
+  const passSafety2 = safety2===null?null:safety2>=t.cashSafety;
+
+  const retRate = growthRate(m.curRetention, m.lastRetention);
+  const curRetVal = num(m.curRetention);
+  const passRetention = curRetVal===null?null:curRetVal>=t.retention;
+
+  return `
+  <div class="eyebrow">月</div>
+  <h1 class="page-title">月：月成長體檢</h1>
+  <p class="page-q">這個月回答：規模有沒有成長？賺得有沒有比上個月健康？</p>
+  <p class="page-desc">損益細項與四個品牌決策請用「週月複盤」或「獲利現金儀表板」，這裡集中做五個月層級的成長判定。</p>
+
+  ${metricRow("月營收成長率 (MoM)", "(本月營收－上月營收) ÷ 上月營收 × 100%　門檻 ≥ "+t.revGrowth+"%", "成長率", revRate, "%", passRev, `
+    <div class="field"><label>上月營收</label><input type="number" data-month="lastRev" value="${esc(m.lastRev)}"></div>
+    <div class="field"><label>本月營收</label><input type="number" data-month="curRev" value="${esc(m.curRev)}"></div>
+  `)}
+
+  ${metricRow("毛利率變化", "本月毛利率－上月毛利率　允許下滑上限 "+t.marginDrop+" 百分點", "變化", marginDelta, " pt", passMargin, `
+    <div class="field"><label>上月毛利率(%)</label><input type="number" data-month="lastMargin" value="${esc(m.lastMargin)}"></div>
+    <div class="field"><label>本月毛利率(%)</label><input type="number" data-month="curMargin" value="${esc(m.curMargin)}"></div>
+  `)}
+
+  <div class="metricrow">
+    <div class="mtop"><h4>獲利成長率 vs 營收成長率</h4><span class="formula">獲利成長率 ≥ 營收成長率 才算健康成長</span></div>
+    <div class="metricgrid">
+      <div class="field"><label>本月獲利成長率(%)</label><input type="number" data-month="profitGrowth" value="${esc(m.profitGrowth)}"></div>
+      <div class="field"><label>本月營收成長率(%)</label><input type="number" data-month="revenueGrowth2" value="${esc(m.revenueGrowth2)}"></div>
+      <div class="field resultbox"><label>判定</label><div class="rv" style="font-size:13px;">${passPG===null?'—':(passPG?'獲利跟上規模':'成長吃掉獲利')}</div>${passPG===null?`<span class="badge na">尚未輸入</span>`:(passPG?`<span class="badge pass">達標</span>`:`<span class="badge fail">未達標</span>`)}</div>
+    </div>
+  </div>
+
+  ${metricRow("現金安全月數", "現金餘額 ÷ 每月固定支出　門檻 ≥ "+t.cashSafety+" 個月", "安全月數", safety2, " 個月", passSafety2, `
+    <div class="field"><label>月底現金餘額</label><input type="number" data-month="cash2" value="${esc(m.cash2)}"></div>
+    <div class="field"><label>每月固定支出</label><input type="number" data-month="fixed2" value="${esc(m.fixed2)}"></div>
+  `)}
+
+  ${metricRow("回購／續約率", "本月回購或續約率　門檻 ≥ "+t.retention+"%", "續約率", curRetVal, "%", passRetention, `
+    <div class="field"><label>上月回購／續約率(%)</label><input type="number" data-month="lastRetention" value="${esc(m.lastRetention)}"></div>
+    <div class="field"><label>本月回購／續約率(%)</label><input type="number" data-month="curRetention" value="${esc(m.curRetention)}"></div>
+  `)}`;
+}
+
+/* ============ QUARTER ============ */
+function panelQuarter(){
+  const q = state.quarter, t = state.thresholds;
+  const ltv=num(q.ltv), cac=num(q.cac);
+  const ratio = (ltv!==null&&cac) ? ltv/cac : null;
+  const passRatio = ratio===null?null:ratio>=t.ltvCac;
+
+  const custRate = growthRate(q.curCust, q.lastCust);
+  const passCust = custRate===null?null:custRate>=0;
+
+  let totalRev=0; let maxRev=0;
+  q.brandRev.forEach(b=>{ const v=num(b.revenue)||0; totalRev+=v; if(v>maxRev) maxRev=v; });
+  const concentration = totalRev? (maxRev/totalRev*100) : null;
+  const passConcentration = concentration===null?null:concentration<=t.concentration;
+
+  const retQ = num(q.curRetentionQ);
+  const passRetQ = retQ===null?null:retQ>=t.retention;
+
+  let brandInputs = q.brandRev.map((b,i)=>`
+    <div class="field"><label>${b.name}</label><input type="number" data-brandq="${i}" value="${esc(b.revenue)}"></div>`).join('');
+
+  return `
+  <div class="eyebrow">季</div>
+  <h1 class="page-title">季：結構性成長</h1>
+  <p class="page-q">這季回答：成長是不是健康的？有沒有集中在單一風險上？</p>
+  <p class="page-desc">這一層看的是短期數字看不出來的結構問題，全部都用具體數字判斷，不用主觀感受。</p>
+
+  ${metricRow("LTV : CAC 比率", "客戶終身價值 ÷ 客戶獲取成本　門檻 ≥ "+t.ltvCac, "比率", ratio, " 倍", passRatio, `
+    <div class="field"><label>平均客戶終身價值 LTV</label><input type="number" data-quarter="ltv" value="${esc(q.ltv)}"></div>
+    <div class="field"><label>平均客戶獲取成本 CAC</label><input type="number" data-quarter="cac" value="${esc(q.cac)}"></div>
+  `)}
+
+  ${metricRow("客戶數成長率", "(本季客戶數－上季客戶數) ÷ 上季客戶數 × 100%　門檻 ≥ 0%", "成長率", custRate, "%", passCust, `
+    <div class="field"><label>上季客戶數</label><input type="number" data-quarter="lastCust" value="${esc(q.lastCust)}"></div>
+    <div class="field"><label>本季客戶數</label><input type="number" data-quarter="curCust" value="${esc(q.curCust)}"></div>
+  `)}
+
+  <div class="metricrow">
+    <div class="mtop"><h4>品牌營收集中度</h4><span class="formula">最大單一品牌營收 ÷ 總營收 × 100%　門檻 ≤ ${t.concentration}%</span></div>
+    <div class="metricgrid" style="grid-template-columns:repeat(4,1fr);">${brandInputs}</div>
+    <div class="metricgrid" style="margin-top:10px;">
+      <div class="field resultbox" style="grid-column:2/3;"><label>最大品牌占比</label><div class="rv">${concentration===null?'—':round1(concentration)+'%'}</div>${passConcentration===null?`<span class="badge na">尚未輸入</span>`:(passConcentration?`<span class="badge pass">夠分散</span>`:`<span class="badge fail">過度集中</span>`)}</div>
+    </div>
+  </div>
+
+  ${metricRow("回購／續約率（季）", "本季回購或續約率　門檻 ≥ "+t.retention+"%", "續約率", retQ, "%", passRetQ, `
+    <div class="field"><label>上季回購／續約率(%)</label><input type="number" data-quarter="lastRetentionQ" value="${esc(q.lastRetentionQ)}"></div>
+    <div class="field"><label>本季回購／續約率(%)</label><input type="number" data-quarter="curRetentionQ" value="${esc(q.curRetentionQ)}"></div>
+  `)}`;
+}
+
+/* ============ YEAR ============ */
+function panelYear(){
+  const y = state.year, t = state.thresholds;
+  const revRate = growthRate(y.curRevY, y.lastRevY);
+  const passRev = revRate===null?null:revRate>=t.revGrowth;
+
+  const ld=num(y.lastDep), cd=num(y.curDep);
+  const depDelta = (ld!==null&&cd!==null) ? (cd-ld) : null;
+  const passDep = depDelta===null?null:depDelta<0;
+
+  const lr=num(y.lastReferral), cr=num(y.curReferral);
+  const refDelta = (lr!==null&&cr!==null) ? (cr-lr) : null;
+  const passRef = refDelta===null?null:refDelta>=0;
+
+  return `
+  <div class="eyebrow">年</div>
+  <h1 class="page-title">年：長期成長</h1>
+  <p class="page-q">今年回答：規模有沒有長期成長？公司有沒有變得更值錢，還是只是變得更累？</p>
+  <p class="page-desc">一年做一次，全部用去年 vs 今年的實際數字比較，不用感覺判斷。</p>
+
+  ${metricRow("年營收成長率 (YoY)", "(今年營收－去年營收) ÷ 去年營收 × 100%　門檻 ≥ "+t.revGrowth+"%", "成長率", revRate, "%", passRev, `
+    <div class="field"><label>去年營收</label><input type="number" data-year="lastRevY" value="${esc(y.lastRevY)}"></div>
+    <div class="field"><label>今年營收</label><input type="number" data-year="curRevY" value="${esc(y.curRevY)}"></div>
+  `)}
+
+  ${metricRow("創辦人依賴事項數變化", "今年只有你能做的事項數－去年同項數量　目標 ＜ 0（要下降）", "變化", depDelta, " 項", passDep, `
+    <div class="field"><label>去年「只有你能做」事項數</label><input type="number" data-year="lastDep" value="${esc(y.lastDep)}"></div>
+    <div class="field"><label>今年「只有你能做」事項數</label><input type="number" data-year="curDep" value="${esc(y.curDep)}"></div>
+  `)}
+
+  ${metricRow("轉介紹客戶占比變化（護城河代理指標）", "今年占比－去年占比　目標 ≥ 0（要持平或上升）", "變化", refDelta, " pt", passRef, `
+    <div class="field"><label>去年轉介紹客戶占比(%)</label><input type="number" data-year="lastReferral" value="${esc(y.lastReferral)}"></div>
+    <div class="field"><label>今年轉介紹客戶占比(%)</label><input type="number" data-year="curReferral" value="${esc(y.curReferral)}"></div>
+  `)}
+
+  <div class="callout">五個數字全部達標，才是真正「有成長」——不是營收數字變大就算，而是<b>規模、獲利、現金、集中度風險、對你個人的依賴</b>同時往對的方向走。任何一個沒達標，就是明年要優先處理的事。</div>`;
+}
+
+const PANELS = { thresholds:panelThresholds, day:panelDay, week:panelWeek, month:panelMonth, quarter:panelQuarter, year:panelYear };
+let currentId = "thresholds";
+
+function renderSidebar(){
+  const el = document.getElementById("sidebar");
+  el.innerHTML = `<div class="brand-mark">成長複盤系統</div><div class="brand-sub">NUMERIC CASCADE</div>` +
+    NAV.map(g=>`<p class="navgroup-title">${g.group}</p>${g.items.map(it=>`
+      <button class="navbtn ${it.id===currentId?'active':''}" data-nav="${it.id}"><span class="tag">${it.tag}</span>${it.label}</button>`).join('')}`).join('');
+  el.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>{
+    currentId = b.getAttribute('data-nav'); renderSidebar(); renderPage();
+    document.getElementById('page').scrollIntoView({behavior:'smooth'});
+  }));
+}
+
+function renderPage(){
+  const page = document.getElementById("page");
+  page.innerHTML = PANELS[currentId]() + `
+    <div class="footbar">
+      <span class="savemsg" id="savemsg">資料會自動儲存，下次打開仍在。</span>
+      <button class="resetbtn" id="resetbtn">清空全部資料</button>
+    </div>`;
+  bindInputs();
+}
+
+function bindInputs(){
+  document.querySelectorAll('[data-th]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ state.thresholds[inp.getAttribute('data-th')] = inp.value; scheduleSave(); });
+  });
+  document.querySelectorAll('[data-day]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ state.day[inp.getAttribute('data-day')] = inp.value; scheduleSave(); renderPage(); });
+  });
+  document.querySelectorAll('[data-daychk]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{ state.dailyLog[todayKey()][cb.getAttribute('data-daychk')] = cb.checked; scheduleSave(); renderPage(); });
+  });
+  document.querySelectorAll('[data-week]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ state.week[inp.getAttribute('data-week')] = inp.value; scheduleSave(); renderPage(); });
+  });
+  document.querySelectorAll('[data-month]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ state.month[inp.getAttribute('data-month')] = inp.value; scheduleSave(); renderPage(); });
+  });
+  document.querySelectorAll('[data-quarter]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ state.quarter[inp.getAttribute('data-quarter')] = inp.value; scheduleSave(); renderPage(); });
+  });
+  document.querySelectorAll('[data-brandq]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ state.quarter.brandRev[+inp.getAttribute('data-brandq')].revenue = inp.value; scheduleSave(); renderPage(); });
+  });
+  document.querySelectorAll('[data-year]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ state.year[inp.getAttribute('data-year')] = inp.value; scheduleSave(); renderPage(); });
+  });
+  document.querySelectorAll('[data-addtask]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const key = btn.getAttribute('data-addtask');
+      const input = document.getElementById('newtask-'+key);
+      const urgent = document.getElementById('urgent-'+key).checked;
+      const hard = document.getElementById('hard-'+key).checked;
+      if(input.value.trim()===''){ return; }
+      state[key].push({text:input.value.trim(), urgent, hard});
+      scheduleSave(); renderPage();
+    });
+  });
+  document.querySelectorAll('[data-deltask]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const [key,i] = btn.getAttribute('data-deltask').split('||');
+      state[key].splice(+i,1); scheduleSave(); renderPage();
+    });
+  });
+  const resetBtn = document.getElementById('resetbtn');
+  if(resetBtn) resetBtn.addEventListener('click', ()=>{
+    if(confirm('確定要清空全部已填寫的資料，回到空白範本嗎？此動作無法復原。')){
+      state = seedState(); scheduleSave(); renderPage();
+    }
+  });
+}
+
+(async function init(){
+  await loadState();
+  renderSidebar();
+  renderPage();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,963 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>MY MONEY MAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+TC:wght@300;400;500&display=swap">
+<style>
+/* Layout: one narrow column, one step at a time (00 → 01 → 02 → 03 → 06 → 07). Each step = a few inputs + one big live answer. Single dark theme by choice (J's black-gold). */
+:root{
+  --bg:#0D0C0A; --panel:#15130F; --panel2:#1B1813; --line:#2C271E; --line2:#4A3F2A;
+  --ink:#EEE7D7; --mute:#9A9180; --dim:#6B6457; --gold:#C9A961; --hi:#E6CF94; --warn:#D99B6C; --ok:#B4BE8E; --cash:#EADBB4;
+  --display:'Cormorant Garamond','Times New Roman',serif;
+  --serif:'Noto Serif TC','Noto Serif CJK TC','Songti TC','PMingLiU',serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);font-weight:300;line-height:1.75;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(90% 45% at 50% -10%,rgba(201,169,97,.10),transparent 60%)}
+.wrap{position:relative;max-width:660px;margin:0 auto;padding-inline:20px;padding-block:22px 72px}
+.wrap.wide{max-width:820px}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:1px solid var(--hi);outline-offset:3px}
+.num{font-family:var(--display);font-variant-numeric:lining-nums tabular-nums}
+.en{font-family:var(--display);letter-spacing:.2em;text-transform:uppercase;font-weight:500}
+.mute{color:var(--mute)}
+.fine{font-size:12.5px;color:var(--dim);line-height:1.7}
+.hidden{display:none!important}
+
+/* top */
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;color:var(--mute)}
+.top .brand{font-family:var(--display);letter-spacing:.24em;color:var(--gold);font-size:12.5px}
+.link{background:none;border:0;padding:6px 0;cursor:pointer;font-size:13.5px;letter-spacing:.08em;color:var(--mute)}
+.link:hover{color:var(--hi)}
+.dots{display:flex;gap:6px;margin-top:16px}
+.dot{flex:1;height:30px;background:none;border:0;border-top:2px solid var(--line);padding:6px 0 0;font-family:var(--display);font-size:12px;letter-spacing:.12em;color:var(--dim);cursor:pointer;text-align:left}
+.dot.done{border-color:var(--gold);color:var(--mute)}
+.dot.cur{border-color:var(--hi);color:var(--hi)}
+.dot:disabled{cursor:default}
+
+/* home */
+.hero{text-align:center;padding:56px 0 30px}
+.hero h1{margin:0;font-family:var(--display);font-weight:500;font-size:clamp(44px,11vw,80px);letter-spacing:.08em;line-height:1;color:var(--hi)}
+.hero .mott{margin-top:18px;font-family:var(--display);font-style:italic;font-size:clamp(17px,3.8vw,21px);line-height:1.6}
+.hero .mott span{display:block}.hero .mott span:last-child{color:var(--gold)}
+.bar{height:3px;background:var(--line);position:relative;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--gold),var(--hi));transition:width .8s cubic-bezier(.2,.7,.2,1)}
+.prog{margin:30px auto 0;max-width:420px}
+.prog .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.prog .pc{font-family:var(--display);font-size:28px;color:var(--hi)}
+.steps{margin-top:40px;border-top:1px solid var(--line)}
+.srow{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:16px 4px;text-align:left;cursor:pointer;transition:padding .25s}
+.srow:hover:not(:disabled):not(.learn){padding-left:12px}
+.srow:disabled{cursor:default;opacity:.5}
+.srow .no{font-family:var(--display);font-size:20px;color:var(--gold)}
+.srow .t{font-family:var(--display);font-size:19px;letter-spacing:.1em;font-weight:500}
+.srow .s{display:block;font-size:14px;color:var(--mute)}
+.st{font-size:12.5px;letter-spacing:.08em;color:var(--dim);white-space:nowrap}
+.st.ok{color:var(--gold)}
+.srow.learn{cursor:default;padding:10px 4px}
+.srow.learn .no{color:var(--dim);font-size:15px}
+.srow.learn .t{color:var(--dim);font-family:var(--serif);font-size:14px;letter-spacing:.06em;font-weight:300}
+.cta{display:block;width:100%;margin-top:30px}
+.homefoot{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 22px;margin-top:34px}
+
+/* step page */
+.head{padding:34px 0 8px}
+.head .ch{font-family:var(--display);font-size:13px;letter-spacing:.24em;color:var(--gold)}
+.head h1{margin:6px 0 0;font-family:var(--display);font-weight:500;font-size:clamp(34px,8vw,46px);letter-spacing:.05em;line-height:1.1}
+.head p{margin:10px 0 0;color:var(--mute);font-size:15px}
+.blk{padding-top:30px}
+.q{display:flex;align-items:baseline;gap:10px;margin:0 0 6px;font-size:18px;font-weight:400}
+.q .k{font-family:var(--display);color:var(--gold);font-size:16px}
+.sub{margin:0 0 12px;font-size:14px;color:var(--mute)}
+
+.fld{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding:10px 0;min-width:0}
+.fld:focus-within{border-bottom-color:var(--gold)}
+.fld label{flex:1;font-size:15.5px;min-width:0}
+.fld label small{display:block;font-size:12px;color:var(--dim)}
+.fld .cur{font-family:var(--display);font-size:13px;color:var(--dim);letter-spacing:.08em}
+.fld input{width:8.5em;max-width:52%;background:transparent;border:0;color:var(--ink);font-family:var(--display);font-size:21px;text-align:right;font-variant-numeric:lining-nums tabular-nums;padding:2px 0;outline:none}
+.fld input::placeholder,.txt::placeholder{color:#4C463B}
+.txt{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line2);color:var(--ink);font:400 18px/1.6 var(--serif);padding:8px 2px;outline:none;border-radius:0}
+.txt:focus{border-color:var(--gold)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.box{border:1px solid var(--line2);padding:18px 18px 14px;background:linear-gradient(180deg,var(--panel2),var(--panel));min-width:0}
+.box .bt{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.box .bt b{font-weight:400;font-size:16px}
+.box .fld input{width:6.5em;font-size:19px}
+.box .fld label{font-size:15px}
+.sum{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding-top:12px;margin-top:4px;border-top:1px solid var(--line2);font-size:14px;color:var(--mute)}
+.sum .v{font-family:var(--display);font-size:22px;color:var(--hi)}
+.quote{margin:12px 0 0;font-size:13px;color:var(--gold)}
+
+/* answer box */
+.ans{margin-top:22px;border:1px solid var(--line2);padding:26px 20px 22px;text-align:center;background:radial-gradient(100% 130% at 50% 0%,#211B11,var(--panel))}
+.ans .l{font-size:13.5px;letter-spacing:.12em;color:var(--mute)}
+.ans .big{font-family:var(--display);font-size:clamp(40px,10vw,60px);color:var(--hi);line-height:1.15;font-variant-numeric:lining-nums tabular-nums}
+.ans .big.q{color:var(--dim)}
+.ans .big.neg{color:var(--warn)}
+.ans .s{margin-top:8px;font-size:14px;color:var(--mute)}
+.ans .s b{font-family:var(--display);font-weight:500;font-size:18px;color:var(--ink)}
+.ans .say{margin-top:12px;font-size:16px}
+.arrow{text-align:center;color:var(--line2);font-family:var(--display);font-size:20px;padding:8px 0}
+
+/* chips */
+.chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.chip{border:1px solid var(--line);background:transparent;padding:14px 8px;cursor:pointer;text-align:center;font-size:15px;border-radius:0;transition:all .25s;position:relative}
+.chip:hover{border-color:var(--line2)}
+.chip[aria-pressed=true]{border-color:var(--gold);color:var(--hi);background:linear-gradient(180deg,rgba(201,169,97,.13),rgba(201,169,97,.02))}
+.chip small{display:block;font-size:11.5px;color:var(--gold)}
+.chips.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.chip .big{display:block;font-family:var(--display);font-size:26px;line-height:1.2}
+.other{margin-top:12px;border:1px solid var(--gold);padding:14px 16px 10px}
+.other label{display:block;font-size:13px;color:var(--gold)}
+.other .txt:focus-visible{outline:none}
+.list{border-top:1px solid var(--line)}
+.opt{display:flex;align-items:center;gap:14px;width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);text-align:left;padding:13px 4px;cursor:pointer;font-size:16px}
+.opt .d{margin-left:auto;width:9px;height:9px;border:1px solid var(--line2);transform:rotate(45deg);flex:none}
+.opt[aria-pressed=true]{color:var(--hi)}
+.opt[aria-pressed=true] .d{background:var(--gold);border-color:var(--gold)}
+
+/* goals */
+.goal{border:1px solid var(--line2);padding:16px 18px 14px;margin-top:12px;background:var(--panel)}
+.goal .gtop{display:flex;gap:10px;align-items:center}
+.goal .gtop .txt{font-size:19px;padding:4px 0}
+.del{background:none;border:0;color:var(--dim);cursor:pointer;font-size:13px;padding:6px;white-space:nowrap}
+.del:hover{color:var(--warn)}
+.ggrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px}
+.ggrid .fld{flex-direction:column;align-items:stretch;gap:0}
+.ggrid .fld label{font-size:12.5px;color:var(--mute)}
+.ggrid .fld input{width:100%;max-width:none;text-align:left;font-size:20px}
+.ym{display:flex;align-items:baseline;gap:6px}.ym .mute{font-size:13px}
+select{background:transparent;border:0;color:var(--ink);font-family:var(--display);font-size:20px;padding:2px 0;outline:none}
+select option{background:var(--panel);color:var(--ink)}
+.gout{display:flex;flex-wrap:wrap;gap:4px 18px;align-items:baseline;margin-top:10px;font-size:14px;color:var(--mute)}
+.gout b{font-family:var(--display);font-weight:500;font-size:19px;color:var(--hi);margin-left:4px}
+.tag{font-size:12px;border:1px solid var(--line2);padding:1px 8px;color:var(--mute)}
+.tag.short{border-color:rgba(234,219,180,.5);color:var(--cash)}
+.tag.long{border-color:rgba(201,169,97,.6);color:var(--gold)}
+.add{margin-top:12px;width:100%;background:transparent;border:1px dashed var(--line2);color:var(--gold);padding:14px;cursor:pointer;font-size:15px;letter-spacing:.08em}
+.add:hover{border-color:var(--gold)}
+.rule{margin-top:14px;font-size:13.5px;color:var(--mute);border-left:1px solid var(--gold);padding:2px 0 2px 14px}
+.fld.ex .exn{flex:1;width:auto;max-width:none;min-width:0;text-align:left;font-family:var(--serif);font-size:15px;font-weight:300}
+.fld.ex .exa{width:6.5em}
+.box .fld.ex .exa{width:5.5em}
+.exd{background:none;border:0;color:var(--dim);cursor:pointer;font-size:17px;line-height:1;padding:0 2px}.exd:hover{color:var(--warn)}
+.addx{display:block;background:none;border:0;color:var(--gold);font-size:13.5px;letter-spacing:.06em;padding:10px 0 4px;cursor:pointer}
+.addx:hover{color:var(--hi)}
+.quote2{font-size:17px;line-height:1.8;color:var(--hi);border-left:1px solid var(--gold);padding-left:16px;margin:0}
+.grp{margin-top:28px}
+.grp-h{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line2);padding-bottom:8px}
+.grp-h .en{font-size:13px;color:var(--gold)}.grp-h b{font-weight:400;font-size:17px}
+.adds{display:flex;gap:10px;flex-wrap:wrap}.adds .add{flex:1 1 220px}
+.gk{font-size:12px;color:var(--gold);letter-spacing:.1em;margin-bottom:2px}
+.seg{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.seg .chip{padding:8px 14px;font-size:14px}
+.fx2{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-top:12px;font-size:14px}.fx2 .seg{margin-top:0}
+.acc{margin-top:12px;border-left:1px solid var(--gold);padding:4px 0 4px 14px;font-size:14.5px}
+.acc div{display:flex;gap:12px}.acc span{color:var(--mute);width:5em;flex:none}
+.acc p,.acc-q{margin:10px 0 0;color:var(--hi);font-size:14.5px}
+.acc-q{margin:8px 0 10px}
+.need{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:14px;color:var(--mute)}
+.need b{font-family:var(--display);font-size:28px;font-weight:500;color:var(--hi)}
+.gsub{font-size:13px;color:var(--mute)}
+.okline{margin:10px 0 0;color:var(--ok);font-size:14px}
+.gmap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.gm{border:1px solid var(--line2);padding:14px 16px;background:var(--panel);min-width:0}
+.gm-h{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.gm-t{font-size:15px;min-width:0;overflow-wrap:anywhere}.gm-d{font-family:var(--display);font-size:16px;color:var(--gold);white-space:nowrap}
+.gm-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px;margin-top:8px}.gm-g span{display:block;font-size:12px;color:var(--mute)}.gm-g b{font-family:var(--display);font-weight:500;font-size:18px}.gm-g .hl b{color:var(--hi)}
+.gm-o{margin-top:8px;font-size:14px;color:var(--mute)}
+.rt{margin-top:14px;border:1px solid var(--line2);padding:6px 16px 12px}
+.rt-r{display:grid;grid-template-columns:minmax(0,1fr) 7.5em 7.5em;gap:10px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.rt-r small{display:block;font-size:12px;color:var(--dim)}
+.rt-r span:nth-child(n+2){font-family:var(--display);font-size:18px;text-align:right;color:var(--mute)}
+.rt-r span.on{color:var(--hi)}
+.rt-h span:nth-child(n+2){font-size:13px;letter-spacing:.1em;color:var(--gold)}
+.rt p{margin:10px 0 0;font-size:13.5px;color:var(--mute)}.rt p b{font-family:var(--display);font-weight:500;font-size:17px;color:var(--hi)}
+@media (max-width:420px){.rt-r{grid-template-columns:minmax(0,1fr) 6em 6em}.rt-r span:nth-child(n+2){font-size:16px}}
+.rc{border-top:1px solid var(--line)}
+.rc-r{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line)}
+.rc-n{font-size:16px;min-width:0}.rc-n small{display:block;font-size:12.5px;color:var(--mute)}
+.rc-p{font-size:12.5px;padding:2px 10px;border:1px solid var(--gold);color:var(--gold);white-space:nowrap}.rc-p.c{border-color:rgba(234,219,180,.6);color:var(--cash)}
+@media (max-width:640px){.gmap{grid-template-columns:minmax(0,1fr)}.ggrid .fld:nth-child(3){grid-column:1/-1}}
+.gt-axis{display:flex;justify-content:space-between;font-family:var(--display);font-size:12.5px;color:var(--dim);letter-spacing:.1em;margin-top:18px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.gt{padding:14px 0;border-bottom:1px solid var(--line)}
+.gt-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.gt-n{font-size:16px;min-width:0;overflow-wrap:anywhere}
+.gst{font-size:12.5px;padding:1px 9px;border:1px solid;white-space:nowrap}
+.gst.ok{color:var(--ok);border-color:rgba(180,190,142,.5)}.gst.bad{color:var(--warn);border-color:rgba(217,155,108,.55)}
+.gt-track{position:relative;height:10px;background:var(--line);margin:10px 0 8px}
+.gt-track i{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,var(--gold),var(--hi))}
+.gt-track i.bad{background:linear-gradient(90deg,#B98A5E,var(--warn))}
+.gt-dl{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--ink)}
+.gt-d{font-size:13px;color:var(--mute)}.gt-d b{font-family:var(--display);font-weight:500;font-size:16px;color:var(--ink)}
+.tl-row .it small{display:block;font-size:12px;color:var(--ok)}.tl-row .it small.bad{color:var(--warn)}
+.rates{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.rates .chip{padding:8px 16px;flex:0 0 auto}
+
+.verdict{margin-top:22px;border:1px solid var(--line2);padding:22px 20px}
+.verdict.bad{border-color:rgba(217,155,108,.55);background:linear-gradient(180deg,rgba(217,155,108,.08),transparent)}
+.verdict.good{border-color:rgba(180,190,142,.45);background:linear-gradient(180deg,rgba(180,190,142,.07),transparent)}
+.verdict .vt{font-family:var(--display);font-size:20px;letter-spacing:.16em;font-weight:600;margin-bottom:6px}
+.verdict.bad .vt{color:var(--warn)}.verdict.good .vt{color:var(--ok)}
+.vrow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.vrow:last-of-type{border-bottom:0}
+.vrow .v{font-family:var(--display);font-size:20px}
+.fix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.fix div{border:1px solid var(--line2);padding:10px 6px;text-align:center;font-size:14px}
+
+/* split bar */
+.split{display:flex;height:14px;margin:16px 0 14px;background:var(--line)}
+.split i{display:block;height:100%;transition:width .5s}
+.legend .r{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line)}
+.legend .r:last-child{border-bottom:0}
+.legend .sw{width:9px;height:9px;transform:rotate(45deg)}
+.legend .n{font-size:16px}
+.legend .p{display:block;font-size:13px;color:var(--mute)}
+.legend .v{font-family:var(--display);font-size:21px;text-align:right}
+.legend .v small{display:block;font-size:13px;color:var(--mute)}
+.note{margin-top:14px;font-size:14px;color:var(--mute);border-left:1px solid var(--gold);padding:2px 0 2px 14px}
+
+/* monthly plan */
+.mrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.mrow .n{flex:1;font-size:16px;min-width:0}
+.mrow .n small{display:block;font-size:12.5px;color:var(--dim)}
+.mrow input{width:7em;background:transparent;border:0;border-bottom:1px solid var(--line2);color:var(--ink);font-family:var(--display);font-size:21px;text-align:right;outline:none;padding:2px 0}
+.mrow input:focus{border-color:var(--gold)}
+.mrow .auto{font-family:var(--display);font-size:21px;color:var(--hi);width:7em;text-align:right}
+.mrow.top .auto{color:var(--ink)}
+.warn{margin-top:12px;font-size:14px;color:var(--warn)}
+
+/* nav */
+.nav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:40px}
+.err{color:var(--warn);font-size:13.5px;text-align:right;min-height:1.2em;margin-top:28px}
+.err+.nav{margin-top:8px}
+.btn{font-family:var(--display),var(--serif);font-size:15px;letter-spacing:.16em;font-weight:600;padding:14px 26px;border:1px solid var(--gold);background:var(--gold);color:#16120A;cursor:pointer;border-radius:0;transition:background .25s}
+.btn:hover{background:var(--hi);border-color:var(--hi)}
+.btn.line{background:transparent;color:var(--gold)}
+.btn.line:hover{background:var(--gold);color:#16120A}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* final map */
+.sheet{position:relative;background:radial-gradient(110% 55% at 50% 0%,#201B12,#0F0E0B 70%);border:1px solid var(--line2);padding:50px clamp(20px,5vw,54px) 40px;margin-top:22px}
+.sheet::before{content:"";position:absolute;inset:9px;border:1px solid rgba(201,169,97,.28);pointer-events:none}
+.sheet .sample{position:absolute;top:22px;right:22px;font-size:12px;letter-spacing:.2em;background:var(--gold);color:#16120A;padding:2px 10px}
+.mt{text-align:center}
+.mt .who{font-family:var(--display);font-size:clamp(20px,5vw,28px);letter-spacing:.32em;color:var(--gold);font-weight:500}
+.mt h2{margin:0;font-family:var(--display);font-weight:500;font-size:clamp(46px,11vw,86px);letter-spacing:.08em;line-height:.95;color:var(--hi)}
+.mt .yr{margin-top:12px;font-family:var(--display);font-size:14px;letter-spacing:.32em;color:var(--mute)}
+.mt .why{margin-top:14px;font-size:14px;color:var(--mute)}
+.mt .why b{font-weight:400;color:var(--ink)}
+.mt .r{width:70px;height:1px;background:var(--gold);margin:22px auto 0}
+.sec{padding-top:34px}
+.sh{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(201,169,97,.22);padding-bottom:8px;margin-bottom:16px}
+.sh .k{font-family:var(--display);font-size:14px;color:var(--gold);letter-spacing:.16em}
+.sh h3{margin:0;font-family:var(--display);font-size:19px;letter-spacing:.22em;font-weight:500;text-transform:uppercase}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.kv .l{font-size:13px;color:var(--mute)}
+.kv .v{font-family:var(--display);font-size:clamp(21px,4.4vw,28px);font-variant-numeric:lining-nums tabular-nums}
+.kv .v.hi{color:var(--hi)}
+.chg{font-family:var(--display);font-size:13px;color:var(--ok);margin-left:4px}.chg.dn{color:var(--warn)}
+.tl-row{display:grid;grid-template-columns:70px 22px minmax(0,1fr);gap:0 12px}
+.tl-row .y{font-family:var(--display);font-size:21px;color:var(--gold);text-align:right;line-height:1.3}
+.tl-row .rail{position:relative;min-height:52px}
+.tl-row .rail::before{content:"";position:absolute;left:10px;top:0;bottom:0;width:1px;background:var(--line2)}
+.tl-row:last-child .rail::before{bottom:auto;height:14px}
+.tl-row .rail::after{content:"";position:absolute;left:5px;top:9px;width:9px;height:9px;transform:rotate(45deg);background:var(--bg);border:1px solid var(--gold)}
+.tl-row.now .rail::after{background:var(--gold)}
+.tl-row .its{display:flex;flex-wrap:wrap;gap:6px 26px;padding-bottom:20px}
+.tl-row .it{font-size:14.5px}
+.tl-row .it b{display:block;font-family:var(--display);font-size:19px;font-weight:500;color:var(--hi)}
+.flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:24px;align-items:start}
+.fs{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.fs .v{font-family:var(--display);font-size:21px}
+.fa{text-align:center;color:var(--line2);font-family:var(--display);font-size:14px}
+.pbox{border:1px solid var(--line2);padding:6px 16px}
+.pbox .fs:last-child{border-bottom:0}
+.pbox .v{color:var(--hi)}
+.moves{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.mv{border:1px solid var(--line2);padding:20px 18px;background:linear-gradient(180deg,var(--panel2),transparent)}
+.mv .no{font-family:var(--display);font-size:30px;color:var(--gold);line-height:1}
+.mv .t{margin-top:10px;font-size:14.5px;line-height:1.7}
+.mv .t b{display:block;font-family:var(--display);font-size:21px;font-weight:500;color:var(--hi);margin:2px 0}
+.ovw{margin:6px 0 4px}.ovw svg{width:100%;height:auto;display:block}
+.ovl{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--mute);margin-top:6px}
+.ovl i{display:inline-block;width:8px;height:8px;transform:rotate(45deg);margin-right:8px}
+.gg-h{display:flex;align-items:baseline;gap:12px;margin:24px 0 10px}
+.gg-h .en{font-size:13px;color:var(--gold)}.gg-h .mute{font-size:13px}
+.gcs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
+.gc{border:1px solid var(--line2);padding:16px 16px 12px;background:linear-gradient(180deg,var(--panel2),transparent);min-width:0}
+.gc.wide{grid-column:1/-1}
+.gc-t{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mute);letter-spacing:.06em;margin-bottom:6px}
+.gc-t i{width:7px;height:7px;transform:rotate(45deg)}
+.gc-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.gc-n{font-size:16px;min-width:0;overflow-wrap:anywhere}
+.gc-a{font-family:var(--display);font-size:26px;color:var(--hi);line-height:1.3;margin-top:2px}
+.gc-a small{font-family:var(--serif);font-size:12.5px;color:var(--mute);margin-left:10px}
+.gch{width:100%;height:auto;display:block;margin:6px 0 4px}
+.gc-m{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;border:1px solid var(--line2);background:rgba(201,169,97,.06)}
+.gc-m span{font-size:13px;color:var(--mute)}.gc-m b{font-family:var(--display);font-weight:500;font-size:24px;color:var(--hi)}.gc-m .gc-w{margin-left:auto;font-size:12px}
+.gc-need{font-size:12.5px;color:var(--warn);margin-top:6px}
+.pbox .fs span small{display:block;font-size:11.5px;color:var(--dim)}
+.gc-f{font-size:12.5px;color:var(--mute)}.gc-f b{font-family:var(--display);font-weight:500;font-size:15px;color:var(--ink)}
+@media (max-width:640px){.gcs{grid-template-columns:minmax(0,1fr)}}
+/* generate animation */
+.fx{position:fixed;inset:0;z-index:50;background:radial-gradient(70% 55% at 50% 45%,#1E1A12,#0B0A08 70%);display:grid;place-items:center;opacity:0;animation:fxIn .6s ease forwards;overflow:hidden}
+.fx.out{animation:fxOut .9s ease forwards}
+@keyframes fxIn{to{opacity:1}}@keyframes fxOut{from{opacity:1}to{opacity:0}}
+.fx canvas{position:absolute;inset:0;width:100%;height:100%}
+.fx-c{position:relative;text-align:center;width:min(92vw,820px);padding:0 16px}
+.fx-top{font-size:13.5px;letter-spacing:.3em;color:var(--mute);opacity:0;animation:fxUp 1s ease .3s forwards}
+.fx-svg{width:100%;height:auto;margin:10px 0 6px;overflow:visible}
+.fx-path{fill:none;stroke:#E6CF94;stroke-width:1.6;stroke-linecap:round;filter:drop-shadow(0 0 6px rgba(230,207,148,.55))}
+.fx-dot{opacity:0;transform-box:fill-box;transform-origin:center;animation:fxPop .9s cubic-bezier(.2,.8,.2,1) var(--d) forwards}
+.fx-halo{animation:fxHalo 2.6s ease-in-out calc(var(--d) + .4s) infinite;transform-box:fill-box;transform-origin:center;opacity:0}
+.fx-dot text{font-family:'Noto Serif TC','Noto Serif CJK TC',serif;font-size:15px;fill:#EEE7D7}
+.fx-dot text.y{font-family:'Cormorant Garamond',Georgia,serif;font-size:13px;fill:#9A9180;letter-spacing:.08em}
+.fx-who{font-family:var(--display);font-size:clamp(18px,4vw,24px);letter-spacing:.34em;color:var(--gold);opacity:0;animation:fxUp 1.2s ease 3.9s forwards}
+.fx-title{font-family:var(--display);font-weight:500;font-size:clamp(40px,10vw,72px);color:var(--hi);line-height:1;letter-spacing:.3em;opacity:0;animation:fxTitle 1.8s cubic-bezier(.2,.7,.2,1) 4.1s forwards}
+.fx-sub{margin-top:16px;font-size:15px;letter-spacing:.12em;color:var(--ink);opacity:0;animation:fxUp 1.2s ease 4.9s forwards}
+.fx-skip{position:absolute;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));background:none;border:0;color:var(--dim);font-size:13px;letter-spacing:.12em;cursor:pointer}
+.fx-skip:hover{color:var(--hi)}
+@keyframes fxUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fxTitle{from{opacity:0;letter-spacing:.3em;filter:blur(6px)}to{opacity:1;letter-spacing:.08em;filter:blur(0)}}
+@keyframes fxPop{0%{opacity:0;transform:scale(.4)}60%{opacity:1;transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
+@keyframes fxHalo{0%,100%{opacity:0;transform:scale(.6)}50%{opacity:.45;transform:scale(1.4)}}
+.ap{display:flex;flex-direction:column;gap:12px}
+.ap-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:14px}
+.ap-h:first-child{margin-top:0}
+.ap-k{font-family:var(--display);font-size:13px;letter-spacing:.2em;color:var(--gold)}
+.ap-h b{font-weight:400;font-size:19px}
+.ap-h .mute{font-size:13.5px}
+.todo{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.td{display:flex;gap:14px;align-items:flex-start;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:14px 2px;cursor:pointer}
+.td .bx{flex:none;width:28px;height:28px;border:1px solid var(--gold);display:grid;place-items:center;font-family:var(--display);font-size:15px;color:var(--gold)}
+.td.on .bx{background:var(--gold);color:#16120A}
+.td .tt{display:block;font-size:16.5px}
+.td.on .tt{color:var(--mute);text-decoration:line-through;text-decoration-color:var(--line2)}
+.td .dd{display:block;font-size:13.5px;color:var(--mute);margin-top:2px}
+.pay{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px}
+.pv{border:1px solid var(--line2);padding:16px 16px 14px;background:linear-gradient(180deg,var(--panel2),transparent);min-width:0}
+.pv .pk{font-size:13.5px;color:var(--gold)}
+.pv .pn{font-family:var(--display);font-size:clamp(24px,4.6vw,30px);color:var(--hi);line-height:1.25;font-variant-numeric:lining-nums tabular-nums}
+.pv .pw{font-size:12.5px;color:var(--mute);margin-top:4px;line-height:1.6}
+.pv.off{opacity:.55}.pv.off .pn{color:var(--mute)}
+.pv.life{border-style:dashed}.pv.life .pk{color:var(--mute)}.pv.life .pn{color:var(--ink)}
+.msl{border-top:1px solid var(--line)}
+.mi{display:grid;grid-template-columns:76px minmax(0,1fr);gap:14px;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14px;color:var(--mute)}
+.mi b{font-weight:400;color:var(--ink);font-size:15px}
+.mi .mt2{font-family:var(--display);font-size:16px;color:var(--gold)}
+.mi.bad b,.mi.bad .mt2{color:var(--warn)}
+.ready{text-align:center;padding:38px 0 4px;font-family:var(--display);font-size:clamp(24px,6vw,34px);letter-spacing:.2em;color:var(--hi)}
+.disc{text-align:center;margin-top:12px}
+.exports{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:22px}
+.whatif{margin-top:30px;border:1px solid var(--line2);padding:26px clamp(18px,4vw,32px);background:linear-gradient(180deg,#17140F,var(--panel))}
+.whatif h2{margin:0;font-family:var(--display);font-size:clamp(28px,6vw,38px);letter-spacing:.14em;color:var(--hi);font-weight:500}
+.sl{padding:14px 0;border-bottom:1px solid var(--line)}
+.sl .r{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sl .v{font-family:var(--display);font-size:22px;color:var(--hi)}
+.sl .v small{font-size:14px;color:var(--mute);margin-left:6px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;margin:6px 0 0}
+input[type=range]::-webkit-slider-runnable-track{height:1px;background:var(--line2)}
+input[type=range]::-moz-range-track{height:1px;background:var(--line2)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;margin-top:-7px;background:var(--bg);border:1px solid var(--gold);transform:rotate(45deg);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;background:var(--bg);border:1px solid var(--gold);border-radius:0;cursor:pointer}
+.wres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
+.wres>div{border:1px solid var(--line);padding:12px}
+.wres .l{font-size:12.5px;color:var(--mute)}
+.wres .v{font-family:var(--display);font-size:21px;color:var(--hi)}
+.wres .o{font-size:12.5px;color:var(--dim)}
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(18px);background:var(--gold);color:#16120A;font-weight:500;letter-spacing:.08em;font-size:14px;padding:10px 22px;opacity:0;transition:all .35s;pointer-events:none;z-index:9;max-width:calc(100% - 32px);text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.fade{animation:fd .6s cubic-bezier(.2,.7,.2,1) both}
+@keyframes fd{from{opacity:.35;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (max-width:640px){
+  .two,.flow,.moves,.wres{grid-template-columns:minmax(0,1fr)}
+  .kv{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .chips{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .chips.four,.fix{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ggrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ggrid .fld:last-child{grid-column:1/-1}
+  .dot{font-size:11px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap" id="root"></div>
+<div class="toast" id="toast" role="status"></div>
+<input type="file" id="restoreFile" accept=".json,application/json" hidden>
+
+<script>
+(function(){
+'use strict';
+const KEY='mmm_map_v3', OLDKEY='mmm_map_v2';
+const NOW=new Date(), NY=NOW.getFullYear(), NM=NOW.getMonth()+1;
+
+const MEANS=['安全感','時間自由','工作選擇權','買房','旅行','創業','照顧家人','提早退休','其他'];
+const PROBLEMS=['不知道錢花去哪裡','存不到錢','不知道自己有多少資產','不知道該留多少現金','想投資但不知道怎麼開始','有投資但沒有計畫','不知道自己的財務目標','不知道怎麼配置資產'];
+const FIXED=[['rent','房租'],['food','伙食'],['transport','交通'],['phone','電信'],['insurance','保險'],['subs','固定訂閱']];
+const FLEX=[['fun','娛樂'],['shopping','購物'],['social','聚餐'],['hobby','興趣']];
+const STEPS=[
+  {id:'profile',ch:'00',en:'Profile',zh:'先認識你',lead:'1 分鐘，讓這張地圖認識你。'},
+  {id:'snapshot',ch:'01',en:'Where Am I?',zh:'我現在有多少錢',lead:'先把數字攤開。大概的數字就好，不用精準到個位數。'},
+  {id:'goals',ch:'02',en:'My Goals',zh:'我的錢要去哪裡',lead:'先決定每一筆錢的角色，再把它放進時間軸。'},
+  {id:'safety',ch:'03',en:'Emergency Fund',zh:'先準備好緊急預備金',lead:'就算突然沒有收入，也能好好生活一段時間的錢。'},
+  {id:'plan',ch:'06',en:'My Allocation',zh:'我的錢怎麼分',lead:'前面的答案都在這裡了。現在決定：每一筆錢負責什麼。'}
+];
+const TERMS={short:['短期','0–1 年'],mid:['中期','1–5 年'],long:['長期','5 年以上']};
+const termOf=m=>m<=12?'short':m<=60?'mid':'long';
+
+/* ---------- state ---------- */
+const uid=()=>Math.random().toString(36).slice(2,9);
+function blank(){return{v:3,view:'home',profile:{name:'',age:'',means:[],meansOther:'',problem:''},
+  assets:{cash:'',invest:''},extra:{assets:[],fixed:[],flex:[]},debt:'',income:'',fixed:{},flex:{},goals:[],rate:0,months:6,
+  plan:{safety:null,short:null},goalBudget:null,done:{},wi:{}}}
+function migrate(o){ // from the previous version (v2)
+  const b=blank(),num=x=>Number(x)||0,tot=x=>Object.values(x||{}).reduce((a,c)=>a+num(c),0);
+  b.profile=Object.assign(b.profile,o.profile||{});
+  const a=o.assets||{};b.assets={cash:a.cash||'',invest:(num(a.invest)+num(a.stock))||'',other:a.other||''};
+  b.debt=tot(o.debts)||'';b.income=tot(o.income)||'';
+  const fk=FIXED.map(x=>x[0]),xk=FLEX.map(x=>x[0]);
+  Object.entries(o.fixed||{}).forEach(([k,v])=>{const kk=fk.includes(k)?k:'other';b.fixed[kk]=num(b.fixed[kk])+num(v)});
+  Object.entries(o.flex||{}).forEach(([k,v])=>{if(k==='food'){b.fixed.food=num(b.fixed.food)+num(v);return}const kk=xk.includes(k)?k:'other';b.flex[kk]=num(b.flex[kk])+num(v)});
+  b.goals=(o.goals||[]).map(g=>{const [y,m]=String(g.deadline||'').split('-');return{id:g.id||uid(),name:g.name||'',target:g.target||'',saved:g.current||'',year:+y||NY+1,month:+m||12}});
+  b.rate=num(o.goalReturn)>0?8:0;
+  const m=o.safety&&o.safety.months;b.months=[3,6,9,12].includes(+m)?+m:6;
+  const d=o.done||{};['profile','snapshot','goals','safety'].forEach(k=>{if(d[k])b.done[k]=1});if(d.alloc)b.done.plan=1;
+  return b;
+}
+let s=blank();
+function fixV3(o){o.rate=Number(o.rate)>0?8:0;
+  o.extra=o.extra||{};['assets','fixed','flex'].forEach(k=>{o.extra[k]=o.extra[k]||[];o[k]=o[k]||{};const v=Number(o[k].other)||0;if(v)o.extra[k].push({id:uid(),name:'其他',amt:v});delete o[k].other});
+  (o.goals||[]).forEach(g=>{if(!g.month)g.month=12;if(!g.kind)g.kind='goal';if(g.flexi==null)g.flexi=''});return o}
+try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o&&o.v===3)s=fixV3(Object.assign(blank(),o))}
+  else{const r2=localStorage.getItem(OLDKEY);if(r2){const o=JSON.parse(r2);if(o&&o.v===2)s=fixV3(migrate(o))}}}catch(e){}
+let sample=null;
+function save(){if(sample)return;try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
+
+/* ---------- helpers ---------- */
+const $=id=>document.getElementById(id);
+const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const n=v=>{const x=Number(v);return isFinite(x)?x:0};
+const sum=o=>Object.values(o||{}).reduce((a,b)=>a+n(b),0);
+const fmt=x=>(x<0?'−':'')+'NT$'+Math.round(Math.abs(x)).toLocaleString('en-US');
+const comma=x=>x===''||x==null?'':Math.round(n(x)).toLocaleString('en-US');
+const wan=x=>{const a=Math.abs(x),sg=x<0?'−':'';return a>=1e4?sg+'NT$'+(+(a/1e4).toFixed(a>=1e6?0:1))+' 萬':sg+'NT$'+Math.round(a).toLocaleString('en-US')};
+const pct=x=>(isFinite(x)?(x*100).toFixed(1):'0.0')+'%';
+const up100=x=>Math.max(0,Math.ceil(x/100)*100);
+function getP(o,p){return p.split('.').reduce((a,k)=>a==null?undefined:a[k],o)}
+function setP(o,p,v){const ks=p.split('.');let c=o;ks.slice(0,-1).forEach(k=>{if(c[k]==null)c[k]={};c=c[k]});c[ks[ks.length-1]]=v}
+const isLatin=t=>/^[\x20-\x7E]+$/.test(t);
+const owner=nm=>{nm=(nm||'').trim();return !nm?'MY':isLatin(nm)?nm.toUpperCase()+"'S":nm+' 的'};
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('on'),2600)}
+function pmt(target,months,annual,have){const i=annual>0?Math.pow(1+annual/100,1/12)-1:0;
+  if(i===0)return Math.max(0,(target-have)/months);const g=Math.pow(1+i,months),rest=target-have*g;return rest<=0?0:rest*i/(g-1)}
+function monthsTo(target,start,monthly,annual){if(start>=target)return 0;const i=annual>0?Math.pow(1+annual/100,1/12)-1:0;let b=start,m=0;while(b<target&&m<1200){b=b*(1+i)+monthly;m++}return m>=1200?null:m}
+/* Goals are funded one after another, nearest deadline first. Money for 1-year+ goals compounds at the chosen rate. */
+function simulate(goals,budget,rate){const i=rate>0?Math.pow(1+rate/100,1/12)-1:0;
+  const L=goals.filter(g=>n(g.target)>0).map(g=>({id:g.id,target:n(g.target),bal:Math.min(n(g.saved),n(g.target)),grow:!g.short,due:g.months,start:n(g.saved)>0?0:null,done:n(g.saved)>=n(g.target)?0:null})).sort((a,b)=>a.due-b.due);
+  for(let m=1;m<=600&&L.some(g=>g.done==null);m++){let av=budget;
+    L.forEach(g=>{if(g.done==null&&g.grow)g.bal*=1+i});
+    for(const g of L){if(g.done!=null)continue;if(av<=0)break;const put=Math.min(av,g.target-g.bal);g.bal+=put;av-=put;if(g.start==null&&put>0)g.start=m-1;if(g.bal>=g.target-.5)g.done=m}
+    L.forEach(g=>{if(g.done==null&&g.bal>=g.target-.5)g.done=m})}
+  const out={};L.forEach(g=>out[g.id]={start:g.start==null?null:g.start,done:g.done,due:g.due,late:g.done==null?Infinity:Math.max(0,g.done-g.due)});return out}
+/* The final map follows the action plan exactly: safety money, short-goal money (cash) and investing money (compounds).
+   When the safety net is full its money moves to short goals (or investing); when short goals are done, that money moves to investing. */
+function simulatePlan(goals,p,rate){const i=rate>0?Math.pow(1+rate/100,1/12)-1:0;
+  const L=goals.filter(g=>n(g.target)>0).map(g=>{const b0=Math.min(n(g.saved),n(g.target));return{id:g.id,short:g.short,target:n(g.target),bal:b0,due:g.months,start:b0>0?0:null,done:b0>=n(g.target)?0:null,series:[b0]}}).sort((a,b)=>a.due-b.due);
+  const SG=L.filter(g=>g.short),LG=L.filter(g=>!g.short);let sLeft=p.sNeed;
+  const fund=(list,av,m)=>{for(const g of list){if(g.done!=null)continue;if(av<=0)break;const put=Math.min(av,g.target-g.bal);g.bal+=put;av-=put;if(g.start==null&&put>0)g.start=m-1;if(g.bal>=g.target-.5){g.bal=g.target;g.done=m}}return av};
+  for(let m=1;m<=600&&L.some(g=>g.done==null);m++){
+    let extra;if(sLeft>0){const put=Math.min(p.safetyM,sLeft);sLeft-=put;extra=p.safetyM-put}else extra=p.safetyM;
+    const shortOpen=SG.some(g=>g.done==null);
+    let inv=p.investM+(shortOpen?0:extra);inv+=fund(SG,p.shortM+(shortOpen?extra:0),m);
+    LG.forEach(g=>{if(g.done==null)g.bal*=1+i});fund(LG,inv,m);
+    LG.forEach(g=>{if(g.done==null&&g.bal>=g.target-.5){g.bal=g.target;g.done=m}});
+    L.forEach(g=>g.series.push(g.bal))}
+  const out={};L.forEach(g=>out[g.id]={start:g.start,done:g.done,due:g.due,late:g.done==null?Infinity:Math.max(0,g.done-g.due),series:g.series});return out}
+/* Each goal gets its own fixed monthly amount (nearest date first); cash goals don't grow, invested goals compound. */
+function simulateEach(goals,alloc,rate){const i=rate>0?Math.pow(1+rate/100,1/12)-1:0,out={};
+  goals.filter(g=>n(g.target)>0).forEach(g=>{const tg=n(g.target),a=alloc[g.id]||0,gi=g.cash?0:i;let b=Math.min(n(g.saved),tg);const series=[b];let done=b>=tg?0:null;
+    for(let m=1;m<=600&&done==null;m++){b=b*(1+gi)+a;if(b>=tg-.5){b=tg;done=m}series.push(b)}
+    out[g.id]={start:0,done,due:g.months,late:done==null?Infinity:Math.max(0,done-g.months),series,alloc:a}});return out}
+function budgetForAll(goals,rate){const G=goals.filter(g=>n(g.target)>0);if(!G.length)return 0;
+  const ok=b=>{const r=simulate(G,b,rate);return G.every(g=>r[g.id].done!=null&&r[g.id].done<=g.months)};
+  let lo=0,hi=Math.max(1000,G.reduce((a,g)=>a+n(g.target),0));if(!ok(hi))return null;
+  while(hi-lo>100){const m=(lo+hi)/2;ok(m)?hi=m:lo=m}return up100(hi)}
+const ymOf=m=>{const t=NY*12+NM-1+m;return Math.floor(t/12)+'/'+String(t%12+1).padStart(2,'0')};
+const dur=m=>m==null?'超過 100 年':m===0?'已達成':m<12?m+' 個月':Math.floor(m/12)+' 年'+(m%12?' '+(m%12)+' 個月':'');
+
+/* ---------- the one model everything reads ---------- */
+const tot=(S,k)=>sum(S[k])+(((S.extra||{})[k])||[]).reduce((a,x)=>a+n(x.amt),0);
+const monthsOf=g=>Math.max(1,(n(g.year)-NY)*12+((n(g.month)||12)-NM));
+const termOfGoal=g=>g.kind==='accum'&&g.mode!=='num'?'long':termOf(monthsOf(g));
+function model(S,W){W=W||{};
+  const baseInc=n(S.income),baseFix=tot(S,'fixed'),baseFlex=tot(S,'flex');
+  const income=W.income!=null?n(W.income):baseInc;
+  const scale=W.spend!=null&&baseFix+baseFlex>0?n(W.spend)/(baseFix+baseFlex):1;
+  const fixed=baseFix*scale,flex=baseFlex*scale,exp=fixed+flex;
+  const surplus=income-exp,rate=income>0?surplus/income:0;
+  const assets=tot(S,'assets'),debt=n(S.debt),nw=assets-debt,cash=n(S.assets.cash);
+  const essential=baseFix,sTarget=essential*S.months,sNeed=Math.max(0,sTarget-cash),sPct=sTarget>0?Math.min(1,cash/sTarget):0;
+  /* cash goals = short-term, plus mid-term goals whose date is fixed; everything else may be invested */
+  const goals=(S.goals||[]).map(g=>{const open=g.kind==='accum'&&g.mode!=='num',months=open?600:monthsOf(g),term=open?'long':termOf(months);
+    const cash=!open&&(term==='short'||(term==='mid'&&g.flexi==='fixed'));const tg=open?0:n(g.target),sv=n(g.saved),still=Math.max(0,tg-sv);
+    return Object.assign({},g,{open,months,term,cash,short:cash,still,need02:tg>0?still/months:0,monthly:tg>0?pmt(tg,months,cash?0:n(S.rate),sv):0})});
+  const shortNeed=goals.filter(g=>g.short).reduce((a,g)=>a+g.monthly,0);
+  const longNeed=goals.filter(g=>!g.short).reduce((a,g)=>a+g.monthly,0);
+  const goalNeed=shortNeed+longNeed;
+  const budget02=S.goalBudget!=null&&S.goalBudget!==''?n(S.goalBudget):Math.max(0,surplus);
+  let sSug=0;if(sNeed>0&&surplus>0)sSug=Math.max(100,up100(Math.min(sNeed/12,surplus*.3)));
+  sSug=Math.min(sSug,Math.max(0,surplus));
+  const safetyM=S.plan.safety!=null&&S.plan.safety!==''?n(S.plan.safety):sSug;
+  const shortSug=Math.min(up100(shortNeed),Math.max(0,surplus-safetyM));
+  const shortM=S.plan.short!=null&&S.plan.short!==''?n(S.plan.short):shortSug;
+  const investM=Math.max(0,surplus-safetyM-shortM),over=Math.max(0,safetyM+shortM-surplus);
+  const safetyETA=sNeed<=0?0:safetyM>0?Math.ceil(sNeed/safetyM):null;
+  const shortSaved=goals.filter(g=>g.short).reduce((a,g)=>a+n(g.saved),0);
+  const cashNeed=sTarget+shortSaved,pos=Math.max(0,nw);
+  const cashPart=Math.min(pos,cashNeed),longPart=Math.max(0,pos-cashPart);
+  const million=monthsTo(1e6,nw,Math.max(0,surplus),n(S.rate));
+  const budgetMap=Math.max(0,surplus-safetyM);
+  const alloc={},byDate=(a,b)=>a.months-b.months;let cl=shortM,il=investM;
+  goals.filter(g=>g.cash&&g.still>0).sort(byDate).forEach(g=>{const a=Math.min(up100(g.monthly),Math.max(0,cl));alloc[g.id]=a;cl-=a});
+  goals.filter(g=>!g.cash&&!g.open&&g.still>0).sort(byDate).forEach(g=>{const a=Math.min(up100(g.monthly),Math.max(0,il));alloc[g.id]=a;il-=a});
+  const accumM=Math.max(0,il)+Math.max(0,cl);
+  const sim=simulateEach(goals,alloc,n(S.rate)),late=goals.filter(g=>n(g.target)>0&&sim[g.id]&&sim[g.id].late>0);
+  return{income,fixed,flex,exp,surplus,rate,assets,debt,nw,cash,essential,sTarget,sNeed,sPct,goals,shortNeed,longNeed,goalNeed,budget02,budgetMap,sim,late,
+    alloc,accumM,safetyM,sSug,shortM,shortSug,investM,over,safetyETA,shortSaved,cashNeed,cashPart,longPart,million,baseInc,baseExp:baseFix+baseFlex};
+}
+
+/* ---------- navigation ---------- */
+const order=['profile','snapshot','goals','safety','plan'];
+const allDone=()=>order.every(k=>s.done[k]);
+function progress(){return Math.round(order.filter(k=>s.done[k]).length/order.length*100)}
+function go(v){s.view=v;save();render();window.scrollTo({top:0})}
+function stepDots(cur){
+  const items=STEPS.map(st=>`<button class="dot ${s.done[st.id]?'done':''} ${cur===st.id?'cur':''}" data-go="${st.id}">${st.ch}</button>`).join('');
+  return `<div class="dots">${items}<button class="dot ${cur==='map'?'cur':''}" data-go="map" ${allDone()?'':'disabled'}>07</button></div>`;
+}
+function topbar(cur){return `<div class="top"><span class="brand">MY MONEY MAP</span><button class="link" data-go="home">地圖首頁</button></div>${cur?stepDots(cur):''}`}
+
+/* ---------- home ---------- */
+function viewHome(){const p=progress(),next=order.find(k=>!s.done[k]),ns=STEPS.find(x=>x.id===next);
+  const row=st=>`<button class="srow" data-go="${st.id}"><span class="no">${st.ch}</span><span><span class="t">${st.en}</span><span class="s">${st.zh}</span></span><span class="st ${s.done[st.id]?'ok':''}">${s.done[st.id]?'已完成 ✓':'未完成'}</span></button>`;
+  const cta=allDone()?`<button class="btn cta" data-go="map">打開我的 MONEY MAP →</button>`
+    :`<button class="btn cta" data-go="${next}">${p===0?'開始建立我的地圖 →':'繼續：'+ns.ch+' '+ns.en+' →'}</button>`;
+  return `<div class="top"><span class="brand">J · ${NY}</span><span></span></div>
+  <section class="hero fade"><h1>MY MONEY MAP</h1>
+    <div class="mott"><span>Know where you are.</span><span>Know where you're going.</span><span>Build the plan in between.</span></div>
+    <div class="prog"><div class="row"><span class="pc">${p}%</span><span class="mute" style="font-size:13.5px">${p===0?'你的地圖還是空的':allDone()?'你的地圖已完成':'地圖建造中'}</span></div><div class="bar"><i style="width:${p}%"></i></div></div>
+  </section>
+  ${cta}
+  <div class="steps fade">${STEPS.slice(0,4).map(row).join('')}
+    <div class="srow learn"><span class="no">04 05</span><span class="t">這兩章在課程影片中學習，不用填寫</span><span></span></div>
+    ${row(STEPS[4])}
+    <button class="srow" data-go="map" ${allDone()?'':'disabled'}><span class="no">07</span><span><span class="t">My Money Map</span><span class="s">${allDone()?'你的完整地圖':'完成上面 5 步後解鎖'}</span></span><span class="st ${allDone()?'ok':''}">${allDone()?'打開 →':'未解鎖'}</span></button>
+  </div>
+  <div class="homefoot"><button class="link" id="sampleBtn">看範例地圖</button><button class="link" id="backupBtn">備份資料</button><button class="link" id="restoreBtn">從備份還原</button><button class="link" id="resetBtn">清空重來</button></div>
+  <p class="fine" style="text-align:center;margin-top:10px">資料只存在這個瀏覽器裡。換手機或電腦前，先備份。</p>`}
+
+/* ---------- shared bits ---------- */
+function extraRows(k,label){return (s.extra[k]||[]).map(x=>`<div class="fld ex" data-ex="${k}" data-xid="${x.id}"><input class="exn" maxlength="16" placeholder="項目名稱" value="${esc(x.name)}" aria-label="項目名稱"><span class="cur">NT$</span><input class="exa" inputmode="numeric" autocomplete="off" placeholder="0" value="${comma(x.amt)}" aria-label="金額"><button class="exd" aria-label="刪除這個項目">×</button></div>`).join('')+`<button class="addx" data-addx="${k}">＋ ${label}</button>`}
+function money(path,label,hint){const id='f-'+path.replace(/\./g,'-');
+  return `<div class="fld"><label for="${id}">${label}${hint?`<small>${hint}</small>`:''}</label><span class="cur">NT$</span><input id="${id}" data-num="${path}" inputmode="numeric" autocomplete="off" placeholder="0" value="${comma(getP(s,path))}"></div>`}
+function head(id){const st=STEPS.find(x=>x.id===id);return `${topbar(id)}<header class="head fade"><div class="ch">第 ${st.ch} 章</div><h1>${st.en}</h1><p>${st.lead}</p></header>`}
+function nav(id){const i=order.indexOf(id),prev=i>0?order[i-1]:'home',last=i===order.length-1;
+  return `<div class="err" id="err"></div><div class="nav"><button class="link" data-go="${prev}">← 上一步</button><button class="btn" id="next">${last?'生成我的 MONEY MAP →':'下一步 →'}</button></div>`}
+
+/* ---------- 00 ---------- */
+function viewProfile(){const P=s.profile;
+  return `${head('profile')}
+  <div class="blk"><div class="two">
+    <div class="fld"><label for="pName">名字 / 暱稱</label><input id="pName" data-txt="profile.name" maxlength="20" style="font-family:var(--serif);font-size:18px" value="${esc(P.name)}" placeholder="Jay"></div>
+    <div class="fld"><label for="pAge">年齡</label><input id="pAge" data-txt="profile.age" inputmode="numeric" maxlength="3" value="${esc(P.age)}" placeholder="23"></div>
+  </div></div>
+  <div class="blk"><h2 class="q"><span class="k">A</span>你最希望錢帶給你什麼？</h2><p class="sub">可以複選。</p>
+    <div class="chips">${MEANS.map(m=>`<button class="chip" data-mean="${m}" aria-pressed="${P.means.includes(m)}">${m==='其他'?`其他<span id="othLabel">${P.meansOther?'：'+esc(P.meansOther):''}</span>`:m}</button>`).join('')}</div>
+    <div class="other ${P.means.includes('其他')?'':'hidden'}" id="otherWrap"><label for="meansOther">其他：你還希望錢帶給你什麼？</label><input class="txt" id="meansOther" data-txt="profile.meansOther" maxlength="20" placeholder="寫下你的答案" value="${esc(P.meansOther)}"></div>
+  </div>
+  <div class="blk"><h2 class="q"><span class="k">B</span>現在你最想解決的財務問題？</h2><p class="sub">選最卡的那一個。</p>
+    <div class="list">${PROBLEMS.map(t=>`<button class="opt" data-prob="${t}" aria-pressed="${P.problem===t}"><span>${t}</span><span class="d"></span></button>`).join('')}</div>
+  </div>${nav('profile')}`}
+
+/* ---------- 01 ---------- */
+function viewSnapshot(){return `${head('snapshot')}
+  <div class="blk"><h2 class="q"><span class="k">①</span>我現在有多少？</h2>
+    ${money('assets.cash','現金 / 銀行存款')}${money('assets.invest','投資資產','股票、ETF、基金等')}${extraRows('assets','新增其他資產')}${money('debt','負債','信用卡未繳、學貸、車貸、信貸全部加起來')}
+    <div class="ans"><div class="l">目前淨資產</div><div class="big" id="o-nw"></div><div class="s">資產 <b id="o-a"></b>　−　負債 <b id="o-d"></b></div><div class="s">不用跟任何人比較，這只是你的起點。</div></div>
+  </div>
+  <div class="blk"><h2 class="q"><span class="k">②</span>我每個月的預算</h2>
+    ${money('income','每月收入','薪水、副業、其他收入加起來')}
+    <div class="arrow">↓</div>
+    <div class="two">
+      <div class="box"><div class="bt"><span class="en" style="font-size:12px;color:var(--gold)">Fixed</span><b>固定 / 基本支出</b></div>
+        ${FIXED.map(([k,l])=>money('fixed.'+k,l)).join('')}${extraRows('fixed','新增其他項目')}<div class="sum"><span>合計</span><span class="v" id="o-fix"></span></div></div>
+      <div class="box"><div class="bt"><span class="en" style="font-size:12px;color:var(--gold)">Flexible</span><b>彈性預算</b></div>
+        ${FLEX.map(([k,l])=>money('flex.'+k,l)).join('')}${extraRows('flex','新增其他項目')}<div class="sum"><span>合計</span><span class="v" id="o-flx"></span></div>
+        <p class="quote">預算不是限制你花錢，是讓你可以放心花。</p></div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="ans"><div class="l">每個月可以留下</div><div class="big" id="o-sur"></div><div class="s">儲蓄率 <b id="o-rate"></b></div><div class="say" id="o-say"></div></div>
+    <p class="note">預算是計畫，記帳是驗證。每天記帳用你習慣的 App、Notion 或 Excel 就好。</p>
+  </div>${nav('snapshot')}`}
+function updSnapshot(){const M=model(s),any=M.assets+M.debt>0;
+  $('o-nw').textContent=any?fmt(M.nw):'NT$ ?';$('o-nw').classList.toggle('q',!any);$('o-a').textContent=fmt(M.assets);$('o-d').textContent=fmt(M.debt);
+  $('o-fix').textContent=fmt(M.fixed);$('o-flx').textContent=fmt(M.flex);
+  const so=$('o-sur');so.textContent=M.income>0?fmt(M.surplus):'NT$ ?';so.classList.toggle('neg',M.surplus<0);so.classList.toggle('q',M.income<=0);
+  $('o-rate').textContent=pct(M.rate);
+  $('o-say').textContent=M.income<=0?'填入收入和支出，看看你每個月能留下多少。':M.surplus>0?`每個月，你有 ${fmt(M.surplus)} 可以用來打造你的未來。`:'現在花出去的比賺進來的多，這是你要先解決的第一件事。'}
+
+/* ---------- 02 ---------- */
+const FLEXI={fixed:'很固定',delay:'可以延後',unsure:'還不確定'};
+const GROUPS=[['short','SHORT TERM'],['mid','MID TERM'],['long','LONG TERM']];
+const ymAt=off=>{const t=NY*12+NM-1+off;return{y:Math.floor(t/12),m:t%12+1}};
+function goalCard(g){const yrs=[];for(let y=NY;y<=NY+40;y++)yrs.push(y);const mm=n(g.month)||12,acc=g.kind==='accum',open=acc&&g.mode!=='num';
+  return `<div class="goal" data-gid="${g.id}"><div class="gk">${acc?'長期資產累積':'有明確用途'}</div>
+  <div class="gtop"><input class="txt" data-g="name" maxlength="30" placeholder="${acc?'持續累積長期資產':'目標名稱'}" value="${esc(g.name)}" aria-label="目標名稱"><button class="del" data-del="1">刪除</button></div>
+  ${acc?`<div class="seg">${[['num','有數字目標'],['open','目前沒有終點']].map(([k,l])=>`<button class="chip" data-mode="${k}" aria-pressed="${(g.mode==='num'?'num':'open')===k}">${l}</button>`).join('')}</div>`:''}
+  ${open?`<div class="acc"><div><span>用途</span>目前無特定用途</div><div><span>時間</span>5 年以上</div><div><span>目標金額</span>尚未設定</div><p>這筆錢目前的任務不是完成某項消費，而是替未來累積更多選擇權。</p></div>`
+  :`<div class="ggrid">
+    <div class="fld"><label>目標金額</label><input data-g="target" inputmode="numeric" placeholder="0" value="${comma(g.target)}" aria-label="目標金額"></div>
+    <div class="fld"><label>已經為這個目標準備</label><input data-g="saved" inputmode="numeric" placeholder="0" value="${comma(g.saved)}" aria-label="已經為這個目標準備"></div>
+    <div class="fld"><label>預計使用時間</label><div class="ym"><select data-g="year" aria-label="年">${yrs.map(y=>`<option value="${y}" ${n(g.year)===y?'selected':''}>${y}</option>`).join('')}</select><span class="mute">年</span><select data-g="month" aria-label="月">${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${mm===i+1?'selected':''}>${i+1}</option>`).join('')}</select><span class="mute">月</span></div></div>
+  </div>
+  ${acc?'':`<div class="fx2"><span class="mute">這個時間是否固定？</span><div class="seg">${Object.entries(FLEXI).map(([k,l])=>`<button class="chip" data-flexi="${k}" aria-pressed="${g.flexi===k}">${l}</button>`).join('')}</div></div>`}
+  <div class="gout" id="go-${g.id}"></div>`}</div>`}
+function viewGoals(){return `${head('goals')}
+  <div class="blk"><p class="quote2">不是每一筆錢都一定要有一個消費目的，<br>但每一筆錢最好知道它的角色。</p>
+    <h2 class="q" style="margin-top:24px">哪些事情，會在這段時間需要用到錢？</h2><p class="sub">有明確用途的，新增成目標。沒有特定用途、只想長期累積的，放在長期。</p></div>
+  <div id="goalsWrap">${GROUPS.map(([t,en])=>`<div class="grp"><div class="grp-h"><span class="en">${en}</span><b>${TERMS[t][0]}｜${TERMS[t][1]}</b></div>
+    <div class="glist">${s.goals.filter(g=>termOfGoal(g)===t).map(goalCard).join('')}</div>
+    <div class="adds"><button class="add" data-add="${t}|goal">＋ 新增${TERMS[t][0]}目標</button>${t==='long'?'<button class="add" data-add="long|accum">＋ 長期資產累積／暫無特定用途</button>':''}</div></div>`).join('')}</div>
+  <div class="blk"><h2 class="q"><span class="k">→</span>MY GOAL MAP</h2><p class="sub">這裡先不計投資報酬，只算：如果完全靠自己準備，還差多少。錢要放哪裡，06 再決定。</p><div id="gmap"></div></div>
+  ${nav('goals')}`}
+function updGoals(){const M=model(s);
+  M.goals.forEach(g=>{const el=$('go-'+g.id);if(!el||g.open)return;const tg=n(g.target);
+    el.innerHTML=!tg?'<p class="fine" style="margin:10px 0 0">填好目標金額，就會算出平均每月需要準備多少。</p>':g.still<=0?'<p class="okline">已經準備好了 ✓</p>'
+      :`<div class="need"><span>平均每月需要準備</span><b>${fmt(g.need02)}</b></div><div class="gsub">還差 ${fmt(g.still)}　·　還有 ${dur(g.months)}</div>`});
+  const box=$('gmap');if(!box)return;const ord={short:0,mid:1,long:2};
+  const G=M.goals.slice().sort((a,b)=>(ord[a.term]-ord[b.term])||(a.months-b.months));
+  if(!G.length){box.innerHTML='<p class="fine">新增目標之後，這裡會整理成你的目標地圖。</p>';return}
+  box.innerHTML=`<div class="gmap">${G.map(g=>g.open?`<div class="gm"><div class="gm-h"><span class="gm-t">${TERMS.long[0]}｜${esc(g.name||'長期資產累積')}</span><span class="gm-d">5 年以上</span></div><div class="gm-o">目前無特定用途<br>持續累積可投資資產</div></div>`
+    :`<div class="gm"><div class="gm-h"><span class="gm-t">${TERMS[g.term][0]}｜${esc(g.name||'目標')}</span><span class="gm-d">${ymOf(g.months).replace('/','.')}</span></div>
+      <div class="gm-g"><div><span>目標</span><b>${fmt(n(g.target))}</b></div><div><span>已有</span><b>${fmt(n(g.saved))}</b></div><div><span>還差</span><b>${fmt(g.still)}</b></div><div class="hl"><span>每月需準備</span><b>${fmt(g.need02)}</b></div></div></div>`).join('')}</div>`}
+function rerenderGoals(focusId){const y=window.scrollY;$('root').innerHTML=viewGoals();bind('goals');updGoals();window.scrollTo({top:y});
+  if(focusId){const el=document.querySelector(`[data-gid="${focusId}"] [data-g=name]`);if(el)el.focus({preventScroll:true})}}
+
+/* ---------- 03 ---------- */
+function viewSafety(){const M=model(s);return `${head('safety')}
+  <div class="blk"><h2 class="q"><span class="k">①</span>你的每月必要支出</h2>
+    <div class="fld"><label>01 的固定 / 基本支出<small>自動帶入，要修改請回 01</small></label><span class="num" style="font-size:22px">${fmt(M.essential)}</span></div></div>
+  <div class="blk"><h2 class="q"><span class="k">②</span>沒有收入的話，你想撐幾個月？</h2>
+    <div class="chips four">${[3,6,9,12].map(m=>`<button class="chip" data-months="${m}" aria-pressed="${s.months===m}"><span class="big">${m}</span>個月${m===6?'<small>建議起點</small>':''}</button>`).join('')}</div></div>
+  <div class="ans"><div class="l">你的緊急預備金</div><div class="big" id="o-st"></div>
+    <div class="s">目前現金 <b id="o-cash"></b>　·　還差 <b id="o-need"></b></div>
+    <div class="bar" style="margin-top:16px"><i id="o-bar"></i></div><div class="s" id="o-sp"></div></div>
+  <p class="note">緊急預備金放在現金或活存，不拿去投資。它的任務是讓你遇到意外時，不用賣掉投資或借錢。</p>
+  ${nav('safety')}`}
+function updSafety(){const M=model(s);$('o-st').textContent=fmt(M.sTarget);$('o-cash').textContent=fmt(M.cash);$('o-need').textContent=fmt(M.sNeed);
+  $('o-bar').style.width=M.sPct*100+'%';$('o-sp').textContent=M.sTarget<=0?'先在 01 填好固定支出':M.sNeed<=0?'已經完成 ✓':'完成 '+pct(M.sPct)}
+
+/* ---------- 06 ---------- */
+const whenTxt=g=>g.open?'沒有特定時間':g.months<12?`${g.months} 個月後要用`:`約 ${+(g.months/12).toFixed(1)} 年後要用`;
+function viewPlan(){const M=model(s);const G=M.goals.slice().sort((a,b)=>a.months-b.months);
+  return `${head('plan')}
+  <div class="blk"><h2 class="q"><span class="k">①</span>你的錢，什麼時候要用？</h2><p class="sub">把 02 的答案叫回來。越快要用、時間越固定的錢，越要放在穩定的地方。</p>
+    <div class="rc">${G.map(g=>`<div class="rc-r"><span class="rc-n">${esc(g.name||(g.kind==='accum'?'長期資產累積':'目標'))}<small>${TERMS[g.term][0]}・${whenTxt(g)}${g.flexi&&!g.open?'・時間'+FLEXI[g.flexi]:''}</small></span><span class="rc-p ${g.cash?'c':''}">${g.cash?'用現金準備':'可以投資'}</span></div>`).join('')}</div>
+    <p class="rule">短期目標，和時間很固定的中期目標：用現金準備，不計報酬。<br>其他中長期目標和長期累積：可以投資，用複利試算。</p>
+    <div style="padding-top:14px"><div class="sub" style="margin:0">投資部分的試算年化報酬率（以複利計算）</div>
+      <div class="rates">${[0,8].map(r=>`<button class="chip" data-rate="${r}" aria-pressed="${n(s.rate)===r}">${r}%${r===0?'<small>只算存錢</small>':''}</button>`).join('')}</div>
+      <div id="p-rate"></div></div></div>
+  <div class="blk"><h2 class="q"><span class="k">②</span>你現在的錢，各自負責什麼？</h2><p class="sub">依照你前面的答案自動分好。</p>
+    <div class="split" id="p-split"></div><div class="legend" id="p-legend"></div><div class="note" id="p-note"></div></div>
+  <div class="blk"><h2 class="q"><span class="k">③</span>之後每個月的錢怎麼分？</h2><p class="sub">建議金額已經算好，想調整可以直接填。</p>
+    <div class="mrow top"><span class="n">每月可以留下<small>來自 01</small></span><span class="auto" id="p-av"></span></div>
+    <div class="mrow"><span class="n">緊急預備金<small id="p-s1"></small></span><input inputmode="numeric" data-num="plan.safety" id="p-s" value="${comma(s.plan.safety)}" placeholder="${comma(M.sSug)}" aria-label="緊急預備金每月"></div>
+    <div class="mrow"><span class="n">用現金準備的目標<small id="p-s2"></small></span><input inputmode="numeric" data-num="plan.short" id="p-g" value="${comma(s.plan.short)}" placeholder="${comma(M.shortSug)}" aria-label="現金目標每月"></div>
+    <div class="mrow"><span class="n">投資<small id="p-s3">剩下的全部，負責其他中長期目標和長期累積</small></span><span class="auto" id="p-i"></span></div>
+    <div id="p-warn"></div></div>
+  ${nav('plan')}`}
+function rateBox(M){const G=M.goals.filter(g=>!g.cash&&!g.open&&g.still>0),cur=n(s.rate);
+  const row=(l,a,b)=>`<div class="rt-r"><span>${l}</span><span class="${cur===0?'on':''}">${a}</span><span class="${cur===8?'on':''}">${b}</span></div>`;
+  const iv=n(s.assets.invest),fv=(rt,m)=>{const i=rt>0?Math.pow(1+rt/100,1/12)-1:0,g=Math.pow(1+i,120);return iv*g+(i>0?m*(g-1)/i:m*120)};
+  let rows='',tip='';
+  if(G.length){const d0=G.reduce((a,g)=>a+pmt(n(g.target),g.months,0,n(g.saved)),0),d8=G.reduce((a,g)=>a+pmt(n(g.target),g.months,8,n(g.saved)),0);
+    rows=G.map(g=>row(`${esc(g.name||'目標')}<small>每月要存</small>`,fmt(up100(pmt(n(g.target),g.months,0,n(g.saved)))),fmt(up100(pmt(n(g.target),g.months,8,n(g.saved)))))).join('');
+    tip=`選 8%，可以投資的目標每月少準備約 <b>${fmt(Math.max(0,d0-d8))}</b>，差額是複利幫你賺的。選 0% 比較保守，等於全部靠自己存。`}
+  else tip='你目前沒有可以投資、又有金額的目標，所以報酬率只會影響下面長期累積的試算。';
+  rows+=row('投資帳戶 10 年後<small>現在的投資資產＋每月投資</small>',wan(fv(0,M.investM)),wan(fv(8,M.investM)));
+  return `<div class="rt"><div class="rt-r rt-h"><span></span><span>0%</span><span>8%</span></div>${rows}<p>${tip}</p></div>`}
+function updPlan(){const M=model(s),tt=M.cashPart+M.longPart||1;$('p-rate').innerHTML=rateBox(M);
+  $('p-split').innerHTML=`<i style="width:${M.cashPart/tt*100}%;background:var(--cash)"></i><i style="width:${M.longPart/tt*100}%;background:var(--gold)"></i>`;
+  $('p-legend').innerHTML=`<div class="r"><span class="sw" style="background:var(--cash)"></span><span><span class="n">現金</span><span class="p">緊急預備金＋用現金準備的目標</span></span><span class="v">${fmt(M.cashPart)}<small>${Math.round(M.cashPart/tt*100)}%</small></span></div>
+    <div class="r"><span class="sw" style="background:var(--gold)"></span><span><span class="n">投資</span><span class="p">其他中長期目標和長期累積</span></span><span class="v">${fmt(M.longPart)}<small>${Math.round(M.longPart/tt*100)}%</small></span></div>`;
+  const diff=M.cash-M.cashPart;
+  $('p-note').textContent=M.nw<=0?'目前淨資產是負的，先把負債和緊急預備金處理好，再開始投資。'
+    :Math.abs(diff)<1000?'你現在的現金剛好，不用調整。'
+    :diff<0?`你的現金比需要的少 ${fmt(-diff)}。先把現金補足，再加碼投資。`
+    :`你的現金比需要的多 ${fmt(diff)}。多出來的部分可以考慮放進投資。`;
+  $('p-av').textContent=fmt(M.surplus);$('p-i').textContent=fmt(M.investM);
+  $('p-s').placeholder=comma(M.sSug);$('p-g').placeholder=comma(M.shortSug);
+  $('p-s1').textContent=M.sNeed>0?`還差 ${fmt(M.sNeed)}${M.safetyETA?`，約 ${M.safetyETA} 個月補滿`:''}`:'已經完成，不用再存';
+  const cg=M.goals.filter(g=>g.cash&&g.still>0);
+  const per=g=>`${g.name||'目標'} ${fmt(M.alloc[g.id]||0)}`;
+  $('p-s2').textContent=cg.length?cg.map(per).join('・'):'沒有要用現金準備的目標';
+  const ig=M.goals.filter(g=>!g.cash&&!g.open&&g.still>0);
+  $('p-s3').textContent=[...ig.map(per),...(M.accumM>0?[`長期累積 ${fmt(M.accumM)}`]:[])].join('・')||'剩下的全部，負責其他中長期目標和長期累積';
+  const w=[];if(M.over>0)w.push(`緊急預備金＋現金目標，已經超過每月可以留下的錢 ${fmt(M.over)}。`);
+  if(M.shortM+1<M.shortNeed)w.push(`用現金準備的目標每月需要 ${fmt(M.shortNeed)}，現在只放 ${fmt(M.shortM)}。`);
+  if(M.late.length)w.push(`照這個分法，${M.late.map(g=>esc(g.name||'目標')).join('、')} 會比預定晚完成。`);
+  $('p-warn').innerHTML=w.length?`<p class="warn">${w.join('<br>')}<br>可以回 02 調整目標的金額或時間。</p>`:''}
+
+/* ---------- 07 final map ---------- */
+const TERM_COL={short:'#EADBB4',mid:'#C9A961',long:'#B8925A'};
+function goalChart(g,r,wide){const W=wide?660:320,H=132,pl=6,pr=6,pt=16,pb=22,tg=n(g.target),col=TERM_COL[g.term];
+  const done=r.done,end=Math.max(6,g.months,done==null?Math.min(600,r.series.length-1):done)+1;
+  const X=m=>pl+(W-pl-pr)*m/end,Y=v=>pt+(H-pt-pb)*(1-Math.min(v,tg)/(tg*1.08));
+  const val=m=>m<r.series.length?r.series[m]:r.series[r.series.length-1];
+  const step=Math.max(1,Math.ceil(end/90));let pts=[];for(let m=0;m<=end;m+=step)pts.push([X(m),Y(val(m))]);pts.push([X(end),Y(val(end))]);
+  const line='M'+pts.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L');
+  const area=line+` L${X(end).toFixed(1)} ${Y(0)} L${X(0)} ${Y(0)} Z`;
+  const ty=Y(tg),dx=X(g.months),late=r.late>0;
+  const dot=done!=null?`<circle cx="${X(done).toFixed(1)}" cy="${ty.toFixed(1)}" r="4.5" fill="${late?'#D99B6C':col}" stroke="#0F0E0B" stroke-width="2"/>`:'';
+  return `<svg class="gch" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(g.name||'目標')}的存錢進度">
+    <defs><linearGradient id="gg-${g.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".38"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
+    <line x1="${pl}" x2="${W-pr}" y1="${Y(0)}" y2="${Y(0)}" stroke="#2C271E"/>
+    <line x1="${pl}" x2="${W-pr}" y1="${ty.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="#6B6457" stroke-dasharray="3 4"/>
+    <text x="${pl}" y="${(ty-5).toFixed(1)}" font-size="10" fill="#9A9180" font-family="Georgia,serif">目標 ${wan(tg)}</text>
+    <line x1="${dx.toFixed(1)}" x2="${dx.toFixed(1)}" y1="${pt-4}" y2="${Y(0)}" stroke="#EEE7D7" stroke-opacity=".55" stroke-width="1"/>
+    <path d="${area}" fill="url(#gg-${g.id})"/><path d="${line}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linejoin="round"/>${dot}
+    <text x="${pl}" y="${H-6}" font-size="10" fill="#6B6457" font-family="Georgia,serif">現在</text>
+    <text x="${W-pr}" y="${H-6}" font-size="10" fill="#6B6457" text-anchor="end" font-family="Georgia,serif">${ymOf(end)}</text></svg>`}
+function overview(M){const G=M.goals.filter(g=>n(g.target)>0&&M.sim[g.id]).map(g=>({g,at:M.sim[g.id].done==null?null:M.sim[g.id].done})).sort((a,b)=>(a.at??1e9)-(b.at??1e9));
+  if(!G.length)return'';const W=640,X=i=>62+(W-130)*(i+1)/G.length;
+  const gaps=G.map((x,i)=>{const prev=i?G[i-1].at:0;if(x.at==null||prev==null)return'';const gap=x.at-prev;if(gap<=0)return'';const mx=(X(i)+(i?X(i-1):62))/2;
+    return `<text x="${mx}" y="${i%2===0?62:34}" text-anchor="middle" font-size="9.5" fill="#6B6457" font-family="Georgia,serif">+${dur(gap)}</text>`}).join('');
+  const marks=gaps+G.map((x,i)=>{const cx=X(i),up=i%2===0,c=TERM_COL[x.g.term];
+    return `<g><line x1="${cx}" x2="${cx}" y1="${up?32:50}" y2="${up?41:59}" stroke="${c}" stroke-opacity=".6"/><rect x="${cx-5}" y="${45-5}" width="10" height="10" transform="rotate(45 ${cx} 45)" fill="${c}"/>
+      <text x="${cx}" y="${up?24:76}" text-anchor="middle" font-size="12" fill="#EEE7D7" font-family="Georgia,serif">${esc((x.g.name||'目標').slice(0,10))}</text>
+      <text x="${cx}" y="${up?10:90}" text-anchor="middle" font-size="10.5" fill="#9A9180" font-family="Georgia,serif">${x.at==null?'—':ymOf(x.at)}</text></g>`}).join('');
+  return `<div class="ovw"><svg viewBox="0 0 ${W} 98" role="img" aria-label="所有目標的時間軸"><line x1="62" x2="${W-24}" y1="45" y2="45" stroke="#4A3F2A"/><circle cx="62" cy="45" r="5" fill="#E6CF94"/><text x="48" y="49" text-anchor="end" font-size="12" fill="#9A9180" font-family="Georgia,serif">現在</text>${marks}</svg>
+    <div class="ovl">${['short','mid','long'].map(t=>`<span><i style="background:${TERM_COL[t]}"></i>${TERMS[t][0]}・${TERMS[t][1]}</span>`).join('')}</div></div>`}
+function goalsBlock(M,S){const G=M.goals.filter(g=>n(g.target)>0&&M.sim[g.id]).sort((a,b)=>a.months-b.months),O=M.goals.filter(g=>g.open);if(!G.length&&!O.length)return'';
+  const ivSaved=M.goals.filter(g=>!g.cash&&!g.open).reduce((a,g)=>a+Math.min(n(g.saved),n(g.target)),0),iv=Math.max(0,n(S.assets.invest)-ivSaved),rt=n(S.rate),i=rt>0?Math.pow(1+rt/100,1/12)-1:0,gg=Math.pow(1+i,120),fv=iv*gg+(i>0?M.accumM*(gg-1)/i:M.accumM*120);
+  const cards=G.map((g,k)=>{const r=M.sim[g.id],already=r.done===0,wide=G.length%2===1&&k===G.length-1;
+    const st=already?'<span class="gst ok">已達成 ✓</span>':r.done==null?'<span class="gst bad">照現在速度存不到</span>':r.late>0?`<span class="gst bad">晚 ${dur(r.late)}</span>`:'<span class="gst ok">準時 ✓</span>';
+    return `<div class="gc ${wide?'wide':''}"><div class="gc-t"><i style="background:${TERM_COL[g.term]}"></i>${TERMS[g.term][0]}・${TERMS[g.term][1]}${g.flexi?'・時間'+FLEXI[g.flexi]:''}</div>
+      <div class="gc-h"><span class="gc-n">${esc(g.name||'目標')}</span>${st}</div><div class="gc-a">${wan(n(g.target))}<small>已準備 ${wan(n(g.saved))}</small></div>
+      ${already?'':`<div class="gc-m"><span>每月存</span><b>${fmt(r.alloc)}</b><span class="gc-w">${g.cash?'放在目標存款帳戶':'放在投資帳戶'}</span></div>${r.alloc+1<up100(g.monthly)?`<div class="gc-need">想準時完成，每月要存 ${fmt(up100(g.monthly))}</div>`:''}`}${goalChart(g,r,wide)}
+      <div class="gc-f">你訂的 <b>${ymOf(g.months)}</b>　·　預計達成 <b>${already?'現在':r.done==null?'—':ymOf(r.done)}</b></div></div>`}).join('');
+  const open=O.map(g=>`<div class="gc wide"><div class="gc-t"><i style="background:${TERM_COL.long}"></i>長期・5 年以上・長期資產累積</div>
+      <div class="gc-h"><span class="gc-n">${esc(g.name||'長期資產累積')}</span><span class="gst ok">持續累積</span></div>
+      <p class="acc-q">這筆錢目前的任務不是完成某項消費，而是替未來累積更多選擇權。</p>
+      <div class="gc-m"><span>每月存</span><b>${fmt(M.accumM)}</b><span class="gc-w">放在投資帳戶</span></div>
+      <div class="gc-f">${M.accumM>0?`加上現在可用的投資資產 <b>${wan(iv)}</b>，10 年後約 <b>${wan(fv)}</b>${rt>0?`（年化 ${rt}% 複利試算）`:'（不計報酬）'}`:'現在每月的錢都分給了其他目標。等目標存好，那筆錢就會轉到這裡。'}</div></div>`).join('');
+  return `<div class="gcs">${cards}${open}</div>`}
+function sheet(S,W,isSample){const M=model(S,W),B=model(S,{}),hasW=W&&(W.income!=null||W.spend!=null);
+  const d=(a,b,isPct)=>{if(!hasW||Math.abs(a-b)<(isPct?.0005:1))return'';const u=a>b;return `<span class="chg ${u?'':'dn'}">${u?'▲':'▼'} ${isPct?(Math.abs(a-b)*100).toFixed(1)+'%':wan(Math.abs(a-b))}</span>`};
+  const P=S.profile,why=[...P.means.filter(m=>m!=='其他'),...(P.means.includes('其他')&&P.meansOther?[P.meansOther]:[])];
+  /* ---- action plan: what to do this week, every payday, and when to change ---- */
+  const shortGoals=M.goals.filter(g=>g.short&&n(g.target)>0&&g.still>0).sort((a,b)=>a.months-b.months);
+  const pay=[];
+  if(M.safetyM>0)pay.push({k:'緊急預備金',v:M.safetyM,to:'緊急預備金帳戶',why:`存到 ${fmt(M.sTarget)} 就停`});
+  const lst=G=>G.map(g=>`${esc(g.name||'目標')} ${fmt(M.alloc[g.id]||0)}`).join('<br>');
+  if(M.shortM>0&&shortGoals.length)pay.push({k:'現金目標',v:M.shortM,to:'目標存款帳戶',why:lst(shortGoals)});
+  const invG=M.goals.filter(g=>!g.cash&&!g.open&&g.still>0);
+  pay.push({k:'投資',v:M.investM,to:'投資帳戶',why:M.investM>0?[lst(invG),M.accumM>0?`長期累積 ${fmt(M.accumM)}`:''].filter(Boolean).join('<br>'):'目前沒有多的錢，先完成前面兩項'});
+  const accts=pay.filter(x=>x.v>0).map(x=>x.to);
+  const todo=[
+    {id:'acct',t:`準備 ${accts.length} 個分開的帳戶`,d:accts.join('、')+'。錢分開放，才不會混在一起花掉。'},
+    {id:'auto',t:'設定發薪日自動轉帳',d:pay.filter(x=>x.v>0&&x.k!=='投資').map(x=>`${fmt(x.v)} → ${x.to}`).join('　')||'目前不需要'},
+    {id:'dca',t:M.investM>0?`設定每月定期定額 ${fmt(M.investM)}`:'先不用設定投資',d:M.investM>0?'選你在課程裡學到、自己看得懂的標的，扣款日設在發薪日之後。':'等緊急預備金或現金目標存好，再把那筆錢改成投資。'}
+  ];
+  const chk=S.checks||{};
+  // milestones
+  const ms=[];
+  M.goals.filter(g=>n(g.target)>0&&M.sim[g.id]&&M.sim[g.id].done>0).forEach(g=>{const rr=M.sim[g.id];
+    ms.push({at:rr.done,t:`${esc(g.name||'目標')}存好`,d:(rr.late>0?`比你訂的 ${ymOf(g.months)} 晚 ${dur(rr.late)}。`:'可以使用這筆錢了。')+(rr.alloc>0?`之後每月這 ${fmt(rr.alloc)} 改放到長期累積`:'')})});
+  if(M.sNeed>0&&M.safetyETA)ms.push({at:M.safetyETA,t:'緊急預備金存滿',d:`之後每月 ${fmt(M.safetyM)} 改放到長期累積`});
+  ms.sort((a,b)=>a.at-b.at);
+  const lateLong=M.late.filter(g=>M.sim[g.id].done==null);
+  const tot=M.cashPart+M.longPart||1;
+  return `<div class="sheet" id="sheet">${isSample?'<div class="sample">範例</div>':''}
+  <div class="mt"><div class="who">${esc(owner(P.name))}</div><h2>MONEY MAP</h2><div class="yr">${NY} → MY FUTURE</div>${why.length?`<div class="why">我希望錢帶給我：<b>${why.map(esc).join('、')}</b></div>`:''}<div class="r"></div></div>
+  <div class="sec"><div class="sh"><span class="k">01</span><h3>You Are Here</h3></div><div class="kv">
+    <div><div class="l">淨資產</div><div class="v hi">${fmt(M.nw)}</div></div>
+    <div><div class="l">每月收入</div><div class="v">${fmt(M.income)}${d(M.income,B.income)}</div></div>
+    <div><div class="l">每月支出</div><div class="v">${fmt(M.exp)}${d(M.exp,B.exp)}</div></div>
+    <div><div class="l">每月可以留下</div><div class="v hi">${fmt(M.surplus)}${d(M.surplus,B.surplus)}</div></div>
+    <div><div class="l">儲蓄率</div><div class="v">${pct(M.rate)}${d(M.rate,B.rate,1)}</div></div>
+    <div><div class="l">存到 100 萬</div><div class="v">${dur(M.million)}</div></div></div></div>
+  <div class="sec"><div class="sh"><span class="k">02</span><h3>Your Goals</h3></div>
+    <p class="fine" style="margin:-6px 0 6px">照你在 06 的每月分配試算。白線是你訂的時間，圓點是預計存好的時間。</p>
+    ${overview(M)}${goalsBlock(M,S)}</div>
+  <div class="sec"><div class="sh"><span class="k">03</span><h3>Your Money</h3></div>
+    <div class="split"><i style="width:${M.cashPart/tot*100}%;background:var(--cash)"></i><i style="width:${M.longPart/tot*100}%;background:var(--gold)"></i></div>
+    <div class="legend"><div class="r"><span class="sw" style="background:var(--cash)"></span><span><span class="n">現金 → 緊急預備金＋用現金準備的目標</span><span class="p">緊急預備金 ${fmt(M.sTarget)}・${S.months} 個月生活費・完成 ${Math.round(M.sPct*100)}%</span></span><span class="v">${Math.round(M.cashPart/tot*100)}%<small>${wan(M.cashPart)}</small></span></div>
+    <div class="r"><span class="sw" style="background:var(--gold)"></span><span><span class="n">投資 → 其他中長期目標與長期累積</span><span class="p">可以投資，用複利試算</span></span><span class="v">${Math.round(M.longPart/tot*100)}%<small>${wan(M.longPart)}</small></span></div></div></div>
+  <div class="sec"><div class="sh"><span class="k">04</span><h3>Every Month</h3></div><div class="flow">
+    <div><div class="fs"><span>收入</span><span class="v">${fmt(M.income)}</span></div><div class="fa">↓</div><div class="fs"><span>生活支出</span><span class="v">${fmt(M.exp)}</span></div><div class="fa">↓</div><div class="fs"><span>可以留下</span><span class="v" style="color:var(--hi)">${fmt(M.surplus)}</span></div></div>
+    <div class="pbox">${M.safetyM>0?`<div class="fs"><span>緊急預備金</span><span class="v">${fmt(M.safetyM)}</span></div>`:''}
+      ${M.goals.filter(g=>g.cash&&g.still>0).sort((a,b)=>a.months-b.months).map(g=>`<div class="fs"><span>${esc(g.name||'目標')}<small>現金・${ymOf(g.months)}</small></span><span class="v">${fmt(M.alloc[g.id]||0)}</span></div>`).join('')}
+      ${M.goals.filter(g=>!g.cash&&!g.open&&g.still>0).sort((a,b)=>a.months-b.months).map(g=>`<div class="fs"><span>${esc(g.name||'目標')}<small>投資・${ymOf(g.months)}</small></span><span class="v">${fmt(M.alloc[g.id]||0)}</span></div>`).join('')}
+      ${M.accumM>0||M.goals.some(g=>g.open)?`<div class="fs"><span>長期累積<small>投資・沒有終點</small></span><span class="v">${fmt(M.accumM)}${d(M.accumM,B.accumM)}</span></div>`:''}</div></div></div>
+  <div class="sec"><div class="sh"><span class="k">05</span><h3>Your Action Plan</h3></div>
+    <div class="ap">
+      <div class="ap-h"><span class="ap-k">STEP 1</span><b>這週先做一次</b><span class="mute">設定好，之後就自動跑</span></div>
+      <div class="todo">${todo.map((x,i)=>`<button class="td ${chk[x.id]?'on':''}" data-chk="${x.id}" aria-pressed="${!!chk[x.id]}"><span class="bx">${chk[x.id]?'✓':i+1}</span><span><span class="tt">${x.t}</span><span class="dd">${x.d}</span></span></button>`).join('')}</div>
+      <div class="ap-h"><span class="ap-k">STEP 2</span><b>每個月發薪日</b><span class="mute">薪水 ${fmt(M.income)} 一進來，先轉走這些</span></div>
+      <div class="pay">${pay.map(x=>`<div class="pv ${x.v>0?'':'off'}"><div class="pk">${x.k}</div><div class="pn">${fmt(x.v)}</div><div class="pw">→ ${x.to}<br>${x.why}</div></div>`).join('')}
+        <div class="pv life"><div class="pk">生活費</div><div class="pn">${fmt(Math.max(0,M.income-M.safetyM-M.shortM-M.investM))}</div><div class="pw">剩下的錢，這個月放心花<br>固定 ${fmt(M.fixed)}・彈性 ${fmt(M.flex)}</div></div></div>
+      <div class="ap-h"><span class="ap-k">STEP 3</span><b>什麼時候要調整</b><span class="mute">到了這些時間點，回來改一下</span></div>
+      <div class="msl">${ms.map(x=>`<div class="mi"><span class="mt2">${ymOf(Math.ceil(x.at))}</span><span><b>${x.t}</b>　${x.d}</span></div>`).join('')}
+        ${lateLong.map(g=>`<div class="mi bad"><span class="mt2">${M.sim[g.id].done==null?'—':ymOf(M.sim[g.id].done)}</span><span><b>${esc(g.name||'目標')}${M.sim[g.id].done==null?' 照現在的速度存不到':' 預計完成'}</b>　比你訂的 ${ymOf(g.months)} 晚，可以回 02 調整時間或金額</span></div>`).join('')}
+        <div class="mi"><span class="mt2">每個月</span><span><b>回來更新一次地圖</b>　收入、支出或目標變了，計畫就跟著變</span></div></div>
+    </div></div>
+  <div class="ready">YOUR MAP IS READY.</div>
+  <p class="fine disc">這份地圖是依你輸入的數字做的規劃試算，不是投資建議，也不指定任何投資標的。${n(S.rate)>0?'可以投資的目標以年化 '+n(S.rate)+'% 複利試算，實際報酬可能更高或更低。':''}</p></div>`}
+function viewMap(){const S=sample||s,M=model(S,{});
+  const incMax=Math.max(10000,Math.round(M.baseInc*2/1000)*1000),expMax=Math.max(10000,Math.round(M.baseExp*2/1000)*1000);
+  const W=S.wi||{};
+  return `${sample?'<div class="top"><span class="brand">MY MONEY MAP · 範例</span><button class="link" data-go="home">← 回到我的地圖</button></div>':topbar('map')}
+  <div id="sheetWrap"></div>
+  <div class="exports"><button class="btn" id="pngBtn">存成圖片</button><button class="btn line" id="pdfBtn">存成 PDF</button></div>
+  <div class="whatif"><div class="mute" style="font-size:13.5px">拉動看看，上面整張地圖會跟著重新計算</div><h2>WHAT IF?</h2>
+    <div class="sl"><div class="r"><span>如果我每月收入是</span><span class="v" id="w-inc"></span></div><input type="range" id="wInc" min="0" max="${incMax}" step="1000" value="${W.income!=null?W.income:M.baseInc}" aria-label="每月收入"></div>
+    <div class="sl"><div class="r"><span>如果我每月花</span><span class="v" id="w-exp"></span></div><input type="range" id="wExp" min="0" max="${expMax}" step="500" value="${W.spend!=null?W.spend:M.baseExp}" aria-label="每月支出"></div>
+    <div class="wres" id="wRes"></div>
+    <div style="margin-top:14px"><button class="link" id="wReset">重設回我的數字</button></div></div>
+  ${sample?'':'<div class="nav"><button class="link" data-go="plan">← 回去修改</button><button class="link" data-go="home">地圖首頁</button></div>'}`}
+function updWhatIf(){const S=sample||s,W=S.wi||{},A=model(S,{}),B=model(S,W);
+  $('w-inc').innerHTML=fmt(B.income)+(Math.round(B.income)!==Math.round(A.income)?`<small>原本 ${fmt(A.income)}</small>`:'');
+  $('w-exp').innerHTML=fmt(B.exp)+(Math.round(B.exp)!==Math.round(A.exp)?`<small>原本 ${fmt(A.exp)}</small>`:'');
+  const c=(l,a,b,f)=>`<div><div class="l">${l}</div><div class="v">${f(b)}</div><div class="o">原本 ${f(a)}</div></div>`;
+  $('wRes').innerHTML=c('每月可以留下',A.surplus,B.surplus,fmt)+c('每月投資',A.investM,B.investM,fmt)+c('存到 100 萬',A.million,B.million,dur);
+  $('sheetWrap').innerHTML=sheet(S,W,!!sample)}
+
+/* ---------- export ---------- */
+function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`))return res();const t=document.createElement('script');t.src=src;t.onload=res;t.onerror=rej;document.head.appendChild(t)})}
+async function saveFile(name,data){let dl=null;try{if(window.claude&&window.claude.use)dl=await window.claude.use('downloads')}catch(e){}
+  if(dl){try{await dl.save({filename:name,data});toast('已下載 '+name)}catch(e){toast(e&&e.code==='declined'?'已取消下載':'這裡暫時無法下載')}return}
+  try{const b=data instanceof Blob?data:new Blob([data]);const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('已下載 '+name)}catch(e){toast('下載沒有成功，請換個瀏覽器再試')}}
+async function capture(){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');try{await document.fonts.ready}catch(e){}
+  return window.html2canvas($('sheet'),{backgroundColor:'#0F0E0B',scale:2,logging:false})}
+const baseName=()=>'MMM_'+(((sample||s).profile.name||'My').trim().replace(/[\\/:*?"<>|\s]+/g,'_'))+'_Money_Map';
+async function exportPNG(b){b.disabled=true;toast('正在產生圖片…');try{const c=await capture();await saveFile(baseName()+'.png',await new Promise(r=>c.toBlob(r,'image/png')))}catch(e){toast('圖片產生失敗，請再試一次')}b.disabled=false}
+async function exportPDF(b){b.disabled=true;toast('正在產生 PDF…');try{const c=await capture();await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  const {jsPDF}=window.jspdf,w=210,h=c.height*w/c.width,pdf=new jsPDF({unit:'mm',format:[w,h]});pdf.addImage(c.toDataURL('image/jpeg',.92),'JPEG',0,0,w,h);await saveFile(baseName()+'.pdf',pdf.output('blob'))}catch(e){toast('PDF 產生失敗，請再試一次')}b.disabled=false}
+
+/* ---------- sample ---------- */
+function sampleState(){const b=blank();return Object.assign(b,{profile:{name:'Jay',age:'23',means:['時間自由','工作選擇權','安全感'],meansOther:'',problem:'不知道怎麼配置資產'},
+  assets:{cash:90000,invest:330000},extra:{assets:[{id:'x1',name:'機車',amt:8000}],fixed:[{id:'x2',name:'孝親費',amt:2000}],flex:[]},debt:80000,income:45000,
+  fixed:{rent:12500,food:6000,transport:1500,phone:600,insurance:1400},flex:{fun:3000,shopping:2000,social:1800,hobby:1000},
+  goals:[{id:'a',kind:'goal',name:'日本旅行',target:80000,saved:20000,year:ymAt(9).y,month:ymAt(9).m,flexi:'fixed'},
+    {id:'b',kind:'goal',name:'房屋頭期款',target:1500000,saved:300000,year:NY+4,month:12,flexi:'unsure'},
+    {id:'c',kind:'accum',mode:'open',name:'持續累積長期資產',target:'',saved:'',year:NY+10,month:12,flexi:''}],
+  rate:8,months:6,done:{profile:1,snapshot:1,goals:1,safety:1,plan:1},wi:{}})}
+
+/* ---------- validation ---------- */
+function check(id){const M=model(s);return({
+  profile:()=>!s.profile.name.trim()?'請填名字或暱稱':!s.profile.means.length?'選至少一個「你最希望錢帶給你什麼」':!s.profile.problem?'選一個你最想解決的問題':'',
+  snapshot:()=>M.income<=0?'請填每月收入':M.exp<=0?'至少填一項每月支出':'',
+  goals:()=>{if(!s.goals.length)return'至少新增一個目標，或一筆長期資產累積';for(const g of s.goals){if(g.kind==='accum'&&g.mode!=='num')continue;const nm=g.name||'目標';
+    if(!n(g.target))return`「${nm}」還沒填目標金額`;if(g.kind!=='accum'&&!g.flexi)return`「${nm}」選一下時間是否固定`}return''},
+  safety:()=>M.essential<=0?'先回 01 填好固定 / 基本支出':'',
+  plan:()=>''})[id]()}
+
+/* ---------- the "build my map" moment ---------- */
+function playBuild(S,cb){
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches){cb();return}
+  const M=model(S,{});
+  const G=M.goals.filter(g=>n(g.target)>0&&M.sim[g.id]).sort((a,b)=>(M.sim[a.id].done??1e9)-(M.sim[b.id].done??1e9)).slice(0,6);
+  const pts=[];for(let k=0;k<=80;k++){const t=k/80;pts.push([60+680*t,140-46*Math.sin(t*Math.PI*1.6+.35)-18*t])}
+  const d='M'+pts.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L');
+  const fx=document.createElement('div');fx.className='fx';fx.setAttribute('role','dialog');fx.setAttribute('aria-label','正在生成你的 MONEY MAP');
+  fx.innerHTML=`<canvas></canvas><div class="fx-c"><div class="fx-top">正在為你畫出地圖</div>
+    <svg class="fx-svg" viewBox="0 0 800 240"><path class="fx-path" d="${d}"/><g class="fx-dots"></g></svg>
+    <div class="fx-who">${esc(owner(S.profile.name))}</div><div class="fx-title">MONEY MAP</div><div class="fx-sub">每一筆錢，都有它要去的地方。</div></div>
+    <button class="fx-skip">略過 →</button>`;
+  document.body.appendChild(fx);
+  const path=fx.querySelector('.fx-path'),len=path.getTotalLength(),DRAW=3.2,T0=.7;
+  path.style.strokeDasharray=len;path.style.strokeDashoffset=len;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{path.style.transition=`stroke-dashoffset ${DRAW}s cubic-bezier(.45,.05,.3,1) ${T0}s`;path.style.strokeDashoffset=0}));
+  const dots=fx.querySelector('.fx-dots'),mk=(f,label,yr,i,big)=>{const p=path.getPointAtLength(f*len),up=i%2===0;
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('class','fx-dot');g.style.setProperty('--d',(T0+f*DRAW*.92)+'s');
+    g.innerHTML=`<circle class="fx-halo" cx="${p.x}" cy="${p.y}" r="${big?16:12}" fill="none" stroke="#E6CF94"/><circle cx="${p.x}" cy="${p.y}" r="${big?6:4.5}" fill="#E6CF94"/>
+      <text x="${p.x}" y="${up?p.y-20:p.y+30}" text-anchor="middle">${esc(label)}</text>${yr?`<text class="y" x="${p.x}" y="${up?p.y-38:p.y+48}" text-anchor="middle">${yr}</text>`:''}`;dots.appendChild(g)};
+  mk(0,'現在','',1,true);
+  G.forEach((g,i)=>{const r=M.sim[g.id];mk((i+1)/(G.length+1),(g.name||'目標').slice(0,10),r.done==null?'':ymOf(r.done),i,false)});
+  mk(1,'MY FUTURE','',G.length%2?1:0,true);
+  // gold dust
+  const cv=fx.querySelector('canvas'),ctx=cv.getContext('2d'),dpr=Math.min(2,window.devicePixelRatio||1);let W=0,H=0,run=true;
+  const size=()=>{W=cv.clientWidth;H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)};size();addEventListener('resize',size);
+  const P=Array.from({length:Math.round(Math.min(110,W*H/9000))},()=>({x:Math.random()*W,y:Math.random()*H,r:.4+Math.random()*1.5,v:.08+Math.random()*.3,ph:Math.random()*6.3,dr:(Math.random()-.5)*.15}));
+  const tick=t=>{if(!run)return;ctx.clearRect(0,0,W,H);for(const q of P){q.y-=q.v;q.x+=q.dr+Math.sin(t*.0006+q.ph)*.08;if(q.y<-4){q.y=H+4;q.x=Math.random()*W}
+    const a=.18+.5*(.5+.5*Math.sin(t*.0018+q.ph));ctx.beginPath();ctx.arc(q.x,q.y,q.r,0,6.283);ctx.fillStyle=`rgba(230,207,148,${a.toFixed(3)})`;ctx.fill()}requestAnimationFrame(tick)};requestAnimationFrame(tick);
+  let ended=false;const finish=()=>{if(ended)return;ended=true;cb();fx.classList.add('out');setTimeout(()=>{run=false;removeEventListener('resize',size);fx.remove()},950)};
+  fx.querySelector('.fx-skip').onclick=finish;const tm=setTimeout(finish,7200);fx.querySelector('.fx-skip').addEventListener('click',()=>clearTimeout(tm));
+}
+
+/* ---------- render & events ---------- */
+const VIEWS={home:viewHome,profile:viewProfile,snapshot:viewSnapshot,goals:viewGoals,safety:viewSafety,plan:viewPlan,map:viewMap};
+const UPD={snapshot:updSnapshot,goals:updGoals,safety:updSafety,plan:updPlan};
+function render(){let v=sample?'map':s.view;if(!VIEWS[v])v='home';if(v==='map'&&!sample&&!allDone())v='home';
+  $('root').className='wrap'+(v==='map'?' wide':'');$('root').innerHTML=VIEWS[v]();bind(v);if(UPD[v])UPD[v]();if(v==='map')updWhatIf()}
+function bind(v){
+  document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{if(sample){sample=null}go(b.dataset.go)}));
+  document.querySelectorAll('[data-num]').forEach(el=>{el.addEventListener('input',()=>{const raw=el.value.replace(/[^\d]/g,'');
+      setP(s,el.dataset.num,raw===''?(el.dataset.num.startsWith('plan.')?null:''):+raw);save();if(UPD[v])UPD[v]()});
+    el.addEventListener('blur',()=>{el.value=comma(getP(s,el.dataset.num))})});
+  document.querySelectorAll('[data-txt]').forEach(el=>el.addEventListener('input',()=>{setP(s,el.dataset.txt,el.value);save()}));
+  const nx=$('next');if(nx)nx.onclick=()=>{const msg=check(v);if(msg){$('err').textContent=msg;return}
+    s.done[v]=1;const i=order.indexOf(v);save();if(i<order.length-1){go(order[i+1])}else{nx.disabled=true;s.wi={};playBuild(s,()=>go('map'))}};
+  if(v==='home'){
+    $('sampleBtn').onclick=()=>{sample=sampleState();render();window.scrollTo({top:0})};
+    $('backupBtn').onclick=()=>saveFile('MMM_backup_'+(s.profile.name||'me').replace(/\s+/g,'_')+'.json',JSON.stringify(s));
+    $('restoreBtn').onclick=()=>$('restoreFile').click();
+    let armed=false;$('resetBtn').onclick=e=>{if(!armed){armed=true;e.target.textContent='再按一次確認清空';return}s=blank();save();render();toast('已清空')};
+  }
+  if(v==='profile'){
+    document.querySelectorAll('[data-mean]').forEach(b=>b.onclick=()=>{const m=b.dataset.mean,a=s.profile.means,i=a.indexOf(m);i>-1?a.splice(i,1):a.push(m);b.setAttribute('aria-pressed',i<0);
+      $('otherWrap').classList.toggle('hidden',!a.includes('其他'));if(m==='其他'&&i<0)$('meansOther').focus();save()});
+    $('meansOther').addEventListener('input',e=>{const t=e.target.value.trim();$('othLabel').textContent=t?'：'+t:''});
+    document.querySelectorAll('[data-prob]').forEach(b=>b.onclick=()=>{s.profile.problem=b.dataset.prob;document.querySelectorAll('[data-prob]').forEach(x=>x.setAttribute('aria-pressed',x===b));save()});
+  }
+  if(v==='goals'){const W=$('goalsWrap'),gid=e=>{const c=e.target.closest('.goal');return c&&s.goals.find(x=>x.id===c.dataset.gid)};
+    W.addEventListener('input',e=>{const g=gid(e),f=e.target.dataset.g;if(!g||!f)return;
+      if(f==='name'){g.name=e.target.value;save();updGoals()}else if(f==='target'||f==='saved'){const r=e.target.value.replace(/[^\d]/g,'');g[f]=r===''?'':+r;save();updGoals()}});
+    W.addEventListener('focusout',e=>{const f=e.target.dataset&&e.target.dataset.g;if(f==='target'||f==='saved'){const g=gid(e);if(g)e.target.value=comma(g[f])}});
+    W.addEventListener('change',e=>{const g=gid(e),f=e.target.dataset.g;if(!g||(f!=='year'&&f!=='month'))return;const before=termOfGoal(g);g[f]=+e.target.value;save();
+      const after=termOfGoal(g);if(after!==before){rerenderGoals();toast('依照時間，已經移到「'+TERMS[after][0]+'」')}else updGoals()});
+    W.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+      if(b.dataset.add){const [t,k]=b.dataset.add.split('|'),d=ymAt(t==='short'?6:t==='mid'?36:120);
+        const g={id:uid(),kind:k,mode:k==='accum'?'open':'',name:k==='accum'?'持續累積長期資產':'',target:'',saved:'',year:d.y,month:d.m,flexi:''};s.goals.push(g);save();rerenderGoals(k==='accum'?null:g.id);return}
+      const g=gid(e);if(!g)return;
+      if(b.dataset.del){s.goals=s.goals.filter(x=>x.id!==g.id);save();rerenderGoals();return}
+      if(b.dataset.flexi){g.flexi=b.dataset.flexi;b.parentElement.querySelectorAll('[data-flexi]').forEach(x=>x.setAttribute('aria-pressed',x===b));save();updGoals();return}
+      if(b.dataset.mode){g.mode=b.dataset.mode;if(g.mode==='num'){const d=ymAt(120);g.year=d.y;g.month=d.m}save();rerenderGoals();return}});
+  }
+  if(v==='snapshot'){const R=$('root');
+    R.querySelectorAll('.addx').forEach(b=>b.onclick=()=>{const k=b.dataset.addx,x={id:uid(),name:'',amt:''};s.extra[k].push(x);save();const y=window.scrollY;render();window.scrollTo({top:y});
+      const el=document.querySelector(`[data-xid="${x.id}"] .exn`);if(el)el.focus({preventScroll:true})});
+    R.querySelectorAll('.fld.ex').forEach(row=>{const x=s.extra[row.dataset.ex].find(z=>z.id===row.dataset.xid);
+      row.querySelector('.exn').oninput=e=>{x.name=e.target.value;save()};
+      const a=row.querySelector('.exa');a.oninput=()=>{const r=a.value.replace(/[^\d]/g,'');x.amt=r===''?'':+r;save();updSnapshot()};a.onblur=()=>a.value=comma(x.amt);
+      row.querySelector('.exd').onclick=()=>{s.extra[row.dataset.ex]=s.extra[row.dataset.ex].filter(z=>z.id!==x.id);save();row.remove();updSnapshot()}});
+  }
+  if(v==='plan')document.querySelectorAll('[data-rate]').forEach(b=>b.onclick=()=>{s.rate=+b.dataset.rate;document.querySelectorAll('[data-rate]').forEach(x=>x.setAttribute('aria-pressed',x===b));save();updPlan()});
+  if(v==='safety')document.querySelectorAll('[data-months]').forEach(b=>b.onclick=()=>{s.months=+b.dataset.months;document.querySelectorAll('[data-months]').forEach(x=>x.setAttribute('aria-pressed',x===b));save();updSafety()});
+  if(v==='map'){const S=sample||s;S.wi=S.wi||{};
+    $('sheetWrap').addEventListener('click',e=>{const b=e.target.closest('[data-chk]');if(!b)return;S.checks=S.checks||{};S.checks[b.dataset.chk]=!S.checks[b.dataset.chk];save();updWhatIf()});
+    $('pngBtn').onclick=e=>exportPNG(e.currentTarget);$('pdfBtn').onclick=e=>exportPDF(e.currentTarget);
+    $('wInc').oninput=e=>{S.wi.income=+e.target.value;save();updWhatIf()};
+    $('wExp').oninput=e=>{S.wi.spend=+e.target.value;save();updWhatIf()};
+    $('wReset').onclick=()=>{S.wi={};save();render()};
+  }
+}
+$('restoreFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const o=JSON.parse(r.result);if(o&&o.v===3)s=fixV3(Object.assign(blank(),o));else if(o&&o.v===2)s=fixV3(migrate(o));else throw 0;s.view='home';save();render();toast('已從備份還原')}catch(x){toast('這個檔案不是 MY MONEY MAP 的備份')}e.target.value=''};r.readAsText(f)});
+render();
+})();
+</script>
+
+</body></html>
